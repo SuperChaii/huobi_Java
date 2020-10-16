@@ -2,6 +2,7 @@ package com.huobi.client;
 
 import java.util.List;
 
+import com.alibaba.fastjson.JSONObject;
 import com.huobi.client.req.generic.CurrencyChainsRequest;
 import com.huobi.constant.Options;
 import com.huobi.constant.enums.ExchangeEnum;
@@ -12,6 +13,8 @@ import com.huobi.model.generic.Symbol;
 import com.huobi.service.huobi.HuobiGenericService;
 
 public interface GenericClient {
+
+  JSONObject getHeartBeat();
 
   String getSystemStatus();
 

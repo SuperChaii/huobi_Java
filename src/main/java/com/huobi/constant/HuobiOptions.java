@@ -14,7 +14,14 @@ import com.huobi.constant.enums.ExchangeEnum;
 public class HuobiOptions implements Options {
 
   @Builder.Default
-  private String restHost = "https://api.huobi.pro";
+  private String restHost = "https://api.hbdm.com";
+  //合约
+  //https://api.btcgateway.pro
+  //境外推荐使用https://api.hbdm.com
+
+  //币币
+  //https://www.huobi.fm
+  //https://api.huobi.pro
 
   @Builder.Default
   private String websocketHost = "wss://api.huobi.pro";

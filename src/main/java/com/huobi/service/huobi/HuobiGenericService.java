@@ -28,6 +28,8 @@ public class HuobiGenericService implements GenericClient {
   public static final String GET_CURRENCY_CHAINS_PATH = "/v2/reference/currencies";
   public static final String GET_TIMESTAMP = "/v1/common/timestamp";
 
+  public static final String GET_HEARTBEAT = "/heartbeat/";
+
   private Options options;
 
   private HuobiRestConnection restConnection;
@@ -35,6 +37,11 @@ public class HuobiGenericService implements GenericClient {
   public HuobiGenericService(Options options) {
     this.options = options;
     restConnection = new HuobiRestConnection(options);
+  }
+
+  @Override
+  public JSONObject getHeartBeat() {
+    return restConnection.executeGet(GET_HEARTBEAT,UrlParamsBuilder.build());
   }
 
   @Override

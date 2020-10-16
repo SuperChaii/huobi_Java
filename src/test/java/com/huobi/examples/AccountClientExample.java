@@ -36,7 +36,7 @@ public class AccountClientExample {
 
   public static void main(String[] args) {
 
-    Long accountId = 123L;
+    Long accountId = 12824596L;
     AccountClient accountService = AccountClient.create(HuobiOptions.builder()
         .apiKey(Constants.API_KEY)
         .secretKey(Constants.SECRET_KEY)
@@ -56,7 +56,9 @@ public class AccountClientExample {
     System.out.println(accountBalance.getType());
     System.out.println(accountBalance.getState());
     accountBalance.getList().forEach(balance -> {
-      System.out.println(balance.toString());
+      if(!balance.getBalance().equals(BigDecimal.ZERO)){
+        System.out.println(balance.toString());
+      }
     });
 
     List<AccountHistory> historyList = accountService.getAccountHistory(AccountHistoryRequest.builder().accountId(accountId).build());
