@@ -3,7 +3,7 @@ package com.huobi.client;
 import com.alibaba.fastjson.JSONObject;
 import com.huobi.client.req.contract.ContractAccountRequest;
 import com.huobi.client.req.contract.ContractKlineRequest;
-import com.huobi.client.req.contract.ContractTakeOrderRequest;
+import com.huobi.client.req.contract.ContractPlaceOrderRequest;
 import com.huobi.constant.Options;
 import com.huobi.constant.enums.ExchangeEnum;
 import com.huobi.exception.SDKException;
@@ -30,5 +30,5 @@ public interface ContractClient {
 
   JSONObject getContractPosition(ContractAccountRequest build);
 
-  JSONObject placeOrder(ContractTakeOrderRequest build);
+  JSONObject placeOrder(ContractPlaceOrderRequest build);
 }

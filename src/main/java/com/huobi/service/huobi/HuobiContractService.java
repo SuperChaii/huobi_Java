@@ -5,7 +5,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.huobi.client.ContractClient;
 import com.huobi.client.req.contract.ContractAccountRequest;
 import com.huobi.client.req.contract.ContractKlineRequest;
-import com.huobi.client.req.contract.ContractTakeOrderRequest;
+import com.huobi.client.req.contract.ContractPlaceOrderRequest;
 import com.huobi.constant.Options;
 import com.huobi.constant.enums.AccountTypeEnum;
 import com.huobi.model.account.Account;
@@ -63,17 +63,17 @@ public class HuobiContractService implements ContractClient {
     @Override
     public JSONObject getContractAccountInfo(ContractAccountRequest request) {
         return restConnection.executePostWithSignature(POST_CONTRACT_ACCOUNT_INFO_PATH,
-                UrlParamsBuilder.build().putToUrl("contract_code", request.getContractCode()));
+                UrlParamsBuilder.build().putToPost("contract_code", request.getContractCode()));
     }
 
     @Override
     public JSONObject getContractPosition(ContractAccountRequest request) {
         return restConnection.executePostWithSignature(POST_CONTRACT_POSITION_PATH,
-                UrlParamsBuilder.build().putToUrl("contract_code", request.getContractCode()));
+                UrlParamsBuilder.build().putToPost("contract_code", request.getContractCode()));
     }
 
     @Override
-    public JSONObject placeOrder(ContractTakeOrderRequest request) {
+    public JSONObject placeOrder(ContractPlaceOrderRequest request) {
         return restConnection.executePostWithSignature(POST_CONTRACT_ORDER,
                 UrlParamsBuilder.build()
                         .putToPost("contract_code",request.getContractCode())

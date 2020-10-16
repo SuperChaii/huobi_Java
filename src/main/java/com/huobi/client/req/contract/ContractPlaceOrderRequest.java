@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class ContractTakeOrderRequest {
+public class ContractPlaceOrderRequest {
     // 	string 	true 	合约代码,支持大小写,"BTC-USD"
     private String contractCode;
     // 	long 	false 	客户自己填写和维护，必须为数字, 请注意必须小于等于9223372036854775807
@@ -30,5 +30,14 @@ public class ContractTakeOrderRequest {
     // 	"optimal_5_ioc"：最优5档-IOC下单，"optimal_10_ioc"：最优10档-IOC下单，"optimal_20_ioc"：最优20档-IOC下单,
     // 	"opponent_fok"：对手价-FOK下单，"optimal_5_fok"：最优5档-FOK下单，"optimal_10_fok"：最优10档-FOK下单，"optimal_20_fok"：最优20档-FOK下单
     private String orderPriceType;
+
+    // 自定义-判断是否持仓（有持仓则不开仓）
+    private Boolean haveOrder;
+    // 自定义-当前持仓方向 "open":开 "close":平
+    private String havaOrderDirection;
+    // 自定义-容错系数
+    private Double dynamicNum;
+    // 自定义-本次是否下单
+    private Boolean currentTakeOrder = false;
 
 }
