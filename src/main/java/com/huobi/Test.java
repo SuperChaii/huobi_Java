@@ -30,21 +30,15 @@ public class Test {
         poRequest.setOffset("open");
         poRequest.setLeverRate(5);
         poRequest.setOrderPriceType("opponent");
-        poRequest.setDynamicNum(0.3);
+        poRequest.setDynamicNum(0.1);
 
-        Double lastDif = null;
-        Double lastDea = null;
-        Double lastMacd = null;
-        String lastTime = null;
-        Double currentDif = null;
-        Double currentDea = null;
-        Double currentMacd = null;
-        String currentTime = null;
+        //当前可开最大张数
+        Integer maxOrders;
 
         List<Double> closeList;
         IndicatrixImpl impl = new IndicatrixImpl();
         ContractAccount contractAccount;
-        ContractPosition contractPosition;
+        ContractPosition contractPosition = null;
 
 
         //获取合约客户端
@@ -54,57 +48,67 @@ public class Test {
                 .secretKey(Constants.SECRET_KEY)
                 .build());
 
-        //获取账户余额
-        contractAccount = getContractAccount(CONTRACTCODE, contractService);
-        if (contractAccount != null) {
-            System.out.println(contractAccount);
-            System.out.println(CONTRACTCODE + "当前可用保证金：" + contractAccount.getMargin_available());
-        }
+
         while (true) {
-            //获取目前持仓
-            contractPosition = getContractPosition(CONTRACTCODE, contractService);
-            if (contractPosition != null) {
-                System.out.println("当前持仓量：" + contractPosition.getVolume() + "当前持仓方向：" + contractPosition.getDirection());
-                if (!contractPosition.getVolume().equals(BigDecimal.ZERO)) {
-                    poRequest.setHaveOrder(true);
-                    poRequest.setHavaOrderDirection(contractPosition.getDirection());
+            try {
+                //获取收盘价，根据K线图
+                closeList = getCloseListByKLine(contractService, CONTRACTCODE, CandlestickIntervalEnum.MIN1, 50);
+                //获取目前持仓
+                contractPosition = getContractPosition(CONTRACTCODE, contractService);
+                if (contractPosition != null) {
+                    System.out.println("当前持仓量：" + contractPosition.getVolume().doubleValue() + "---当前持仓方向：" + contractPosition.getDirection());
+                    if (!contractPosition.getVolume().equals(BigDecimal.ZERO)) {
+                        poRequest.setHaveOrder(true);
+                        poRequest.setHavaOrderDirection(contractPosition.getDirection());
+                        poRequest.setVolume(contractPosition.getVolume().longValue());
+                    } else {
+                        poRequest.setHaveOrder(false);
+                    }
                 } else {
                     poRequest.setHaveOrder(false);
+                    //无持仓，获取账户余额，计算开仓张数（当前杠杆下满仓）
+                    contractAccount = getContractAccount(CONTRACTCODE, contractService);
+                    if (contractAccount != null) {
+                        System.out.println(CONTRACTCODE + "当前可用保证金：" + contractAccount.getMargin_available());
+                    }
+                    maxOrders = contractAccount.getMargin_available()
+                            .multiply(new BigDecimal(closeList.get(closeList.size() - 1)))
+                            .multiply(new BigDecimal(poRequest.getLeverRate()))
+                            .divide(new BigDecimal(100)).intValue() - 1;
+                    System.out.println(getTimeFormat(System.currentTimeMillis())
+                            + "---当前无持仓，正在寻找开仓机会！杠杆为" + poRequest.getLeverRate() + "倍，可开张数:" + maxOrders
+                            + "---lastClose:" + closeList.get(closeList.size() - 2)
+                            + "---currentClose:" + closeList.get(closeList.size() - 1));
+                    poRequest.setVolume(maxOrders.longValue());
                 }
-            } else {
-                poRequest.setHaveOrder(false);
-            }
 
-            //获取收盘价，根据K线图
-            closeList = getCloseListByKLine(contractService, CONTRACTCODE, CandlestickIntervalEnum.MIN1, 50);
-            System.out.println(getTimeFormat(System.currentTimeMillis()));
-
-            Double[] macdArr = new Double[closeList.size()];
-            Double[] deaArr = new Double[closeList.size()];
-            Double[] difArr = new Double[closeList.size()];
-            //获取MACD数组
-            impl.MACD(closeList.toArray(new Double[closeList.size()]), 12, 26, 9, macdArr, deaArr, difArr);
-
-            currentDif = difArr[closeList.size() - 1];
-            currentDea = deaArr[closeList.size() - 1];
-            currentMacd = macdArr[closeList.size() - 1];
-            lastDif = difArr[closeList.size() - 2];
-            lastDea = deaArr[closeList.size() - 2];
-            lastMacd = macdArr[closeList.size() - 2];
-
-
-            getMacdArray( poRequest, lastDif, lastDea, lastMacd, currentMacd, currentDea, currentDif);
-            //合约下单
-            if (poRequest.getCurrentTakeOrder()) {
-                takeOrder(CONTRACTCODE, contractService, poRequest.getVolume(), poRequest.getDirection(),
-                        poRequest.getOffset(), poRequest.getLeverRate(), poRequest.getOrderPriceType());
-                System.out.println("***已成功下单！" + poRequest.toString());
-            }
-            poRequest.setCurrentTakeOrder(false);
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                Double[] macdArr = new Double[closeList.size()];
+                Double[] deaArr = new Double[closeList.size()];
+                Double[] difArr = new Double[closeList.size()];
+                //获取MACD数组
+                impl.MACD(closeList.toArray(new Double[closeList.size()]), 12, 26, 9, macdArr, deaArr, difArr);
+                System.out.println("---currentMACD:" + macdArr[macdArr.length - 1]
+                        + "---lastMACD:" + macdArr[macdArr.length - 2]
+                        + "---currentDIF:" + difArr[difArr.length - 1]
+                        + "---lastDIF:" + difArr[difArr.length - 2]
+                        + "---currentDEA:" + deaArr[deaArr.length - 1]
+                        + "---lastDEA:" + deaArr[deaArr.length - 2]
+                );
+                getMacdArray(poRequest, difArr, deaArr, macdArr);
+                //合约下单
+                if (poRequest.getCurrentTakeOrder()) {
+                    takeOrder(CONTRACTCODE, contractService, poRequest.getVolume(), poRequest.getDirection(),
+                            poRequest.getOffset(), poRequest.getLeverRate(), poRequest.getOrderPriceType());
+                    System.out.println("***已成功下单！" + poRequest.toString());
+                }
+                poRequest.setCurrentTakeOrder(false);
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
             }
         }
     }
@@ -152,50 +156,72 @@ public class Test {
         return null;
     }
 
-    private static void getMacdArray(ContractPlaceOrderRequest poRequest, Double lastDif, Double lastDea, Double lastMacd, Double macd, Double dea, Double dif) {
+    private static void getMacdArray(ContractPlaceOrderRequest poRequest, Double[] difArr, Double[] deaArr, Double[] macdArr) {
         double dynamicNum = poRequest.getDynamicNum();
+        Double currentDif = null;
+        Double currentDea = null;
+        Double currentMacd = null;
+        Double lastDif = null;
+        Double lastDea = null;
+        Double lastMacd = null;
+        //判断后5根K线有没有交叉
+        for (int i = 1; i < 3; i++) {
+            currentDif = difArr[difArr.length - i];
+            currentDea = deaArr[deaArr.length - i];
+            currentMacd = macdArr[macdArr.length - i];
+            lastDif = difArr[difArr.length - i - 1];
+            lastDea = deaArr[deaArr.length - i - 1];
+            lastMacd = macdArr[macdArr.length - i - 1];
 
-        //判断上一次是否有值
-        if (lastDif != null && lastDea != null && lastMacd != null) {
-            if (poRequest.getHaveOrder()) {
-                //有持仓则只考虑平仓，判断是否出现背离
-                if ("buy".equals(poRequest.getHavaOrderDirection())) {
-                    if ((dif < lastDif && Math.abs(dif - lastDif) > dynamicNum)
-                            || (dea < lastDea && Math.abs(dea - lastDea) > dynamicNum)
-                            || (macd < lastMacd && Math.abs(dif - lastDif) > dynamicNum)
-                    ) {
-                        poRequest.setOffset("close");
-                        poRequest.setDirection("sell");
-                        System.out.println("出现顶部背离，且容错系数超过" + dynamicNum + "，可能转空头，已将多向平仓！");
-                        poRequest.setCurrentTakeOrder(true);
-                        return;
+
+            //判断上一次是否有值
+            if (lastDif != null && lastDea != null && lastMacd != null) {
+                if (poRequest.getHaveOrder()) {
+                    //有持仓则只考虑平仓，判断是否出现背离
+                    if ("buy".equals(poRequest.getHavaOrderDirection())) {
+                        if ((currentDif < lastDif && Math.abs(currentDif - lastDif) > dynamicNum)
+                                && (currentMacd < lastMacd && Math.abs(currentMacd - lastDif) > dynamicNum)
+                        ) {
+                            poRequest.setOffset("close");
+                            poRequest.setDirection("sell");
+                            System.out.println("出现顶部背离，且容错系数超过" + dynamicNum + "，可能转空头，已将多向平仓！");
+                            poRequest.setCurrentTakeOrder(true);
+                            return;
+                        }
+                    } else {
+                        if ((currentDif > lastDif && Math.abs(currentDif - lastDif) > dynamicNum)
+                                && (currentMacd > lastMacd && Math.abs(currentMacd - lastDif) > dynamicNum)
+                        ) {
+                            poRequest.setOffset("close");
+                            poRequest.setDirection("buy");
+                            System.out.println("出现底部部背离 ，且容错系数超过" + dynamicNum + "，可能转多头，已将空向平仓！");
+                            poRequest.setCurrentTakeOrder(true);
+                            return;
+                        }
                     }
                 } else {
-                    if ((dif > lastDif && Math.abs(dif - lastDif) > dynamicNum)
-                            || (dea > lastDea && Math.abs(dea - lastDea) > dynamicNum)
-                            || (macd > lastMacd && Math.abs(dif - lastDif) > dynamicNum)
+                    //无持仓只考虑开仓，判断 DIF&DEA 是否交叉
+                    if (currentDif > currentDea
+                            && lastDif < lastDea
+                            && Math.abs(currentDif - lastDif) > dynamicNum
+                            && currentMacd > -0.3
                     ) {
-                        poRequest.setOffset("close");
+                        poRequest.setOffset("open");
                         poRequest.setDirection("buy");
-                        System.out.println("出现底部部背离 ，且容错系数超过" + dynamicNum + "，可能转多头，已将空向平仓！");
+                        System.out.println("KLine出线金叉，转为多头，已开仓！！！");
+                        poRequest.setCurrentTakeOrder(true);
+                        return;
+                    } else if (currentDif < currentDea
+                            && lastDif > lastDea
+                            && Math.abs(currentDif - lastDif) > dynamicNum
+                            && currentMacd < 0.3
+                    ) {
+                        poRequest.setOffset("open");
+                        poRequest.setDirection("sell");
+                        System.out.println("KLine出线死叉，转为空头，已开仓！！！");
                         poRequest.setCurrentTakeOrder(true);
                         return;
                     }
-                }
-            } else {
-                //无持仓只考虑开仓，判断 DIF&DEA 是否交叉
-                if (dif > dea && lastDif < lastDea && Math.abs(dif - lastDif) > dynamicNum) {
-                    poRequest.setOffset("open");
-                    poRequest.setDirection("buy");
-                    System.out.println("KLine出线金叉，转为多头，已开仓！！！");
-                    poRequest.setCurrentTakeOrder(true);
-                    return;
-                } else if (dif < dea && lastDif > lastDea && Math.abs(dif - lastDif) > dynamicNum) {
-                    poRequest.setOffset("open");
-                    poRequest.setDirection("sell");
-                    System.out.println("KLine出线死叉，转为空头，已开仓！！！");
-                    poRequest.setCurrentTakeOrder(true);
-                    return;
                 }
             }
         }
