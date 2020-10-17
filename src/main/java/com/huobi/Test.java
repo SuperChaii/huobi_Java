@@ -23,6 +23,7 @@ public class Test {
 
     public static void main(String[] args) {
         final String CONTRACTCODE = "BTC-USD";
+        final Long sleepMillis = 1000L;
 
         ContractPlaceOrderRequest poRequest = new ContractPlaceOrderRequest();
         poRequest.setVolume(1L);
@@ -68,17 +69,17 @@ public class Test {
                     poRequest.setHaveOrder(false);
                     //无持仓，获取账户余额，计算开仓张数（当前杠杆下满仓）
                     contractAccount = getContractAccount(CONTRACTCODE, contractService);
-                    if (contractAccount != null) {
-                        System.out.println(CONTRACTCODE + "当前可用保证金：" + contractAccount.getMargin_available());
-                    }
+//                    if (contractAccount != null) {
+//                        System.out.println(CONTRACTCODE + "当前可用保证金：" + contractAccount.getMargin_available());
+//                    }
                     maxOrders = contractAccount.getMargin_available()
                             .multiply(new BigDecimal(closeList.get(closeList.size() - 1)))
                             .multiply(new BigDecimal(poRequest.getLeverRate()))
                             .divide(new BigDecimal(100)).intValue() - 1;
-                    System.out.println(getTimeFormat(System.currentTimeMillis())
-                            + "---当前无持仓，正在寻找开仓机会！杠杆为" + poRequest.getLeverRate() + "倍，可开张数:" + maxOrders
-                            + "---lastClose:" + closeList.get(closeList.size() - 2)
-                            + "---currentClose:" + closeList.get(closeList.size() - 1));
+//                    System.out.println(getTimeFormat(System.currentTimeMillis())
+//                            + "---当前无持仓，正在寻找开仓机会！杠杆为" + poRequest.getLeverRate() + "倍，可开张数:" + maxOrders
+//                            + "---lastClose:" + closeList.get(closeList.size() - 2)
+//                            + "---currentClose:" + closeList.get(closeList.size() - 1));
                     poRequest.setVolume(maxOrders.longValue());
                 }
 
@@ -87,23 +88,23 @@ public class Test {
                 Double[] difArr = new Double[closeList.size()];
                 //获取MACD数组
                 impl.MACD(closeList.toArray(new Double[closeList.size()]), 12, 26, 9, macdArr, deaArr, difArr);
-                System.out.println("---currentMACD:" + macdArr[macdArr.length - 1]
-                        + "---lastMACD:" + macdArr[macdArr.length - 2]
-                        + "---currentDIF:" + difArr[difArr.length - 1]
-                        + "---lastDIF:" + difArr[difArr.length - 2]
-                        + "---currentDEA:" + deaArr[deaArr.length - 1]
-                        + "---lastDEA:" + deaArr[deaArr.length - 2]
-                );
                 getMacdArray(poRequest, difArr, deaArr, macdArr);
                 //合约下单
                 if (poRequest.getCurrentTakeOrder()) {
                     takeOrder(CONTRACTCODE, contractService, poRequest.getVolume(), poRequest.getDirection(),
                             poRequest.getOffset(), poRequest.getLeverRate(), poRequest.getOrderPriceType());
-                    System.out.println("***已成功下单！" + poRequest.toString());
+                    System.out.println("---currentMACD:" + macdArr[macdArr.length - 1]
+                            + "---lastMACD:" + macdArr[macdArr.length - 2]
+                            + "---currentDIF:" + difArr[difArr.length - 1]
+                            + "---lastDIF:" + difArr[difArr.length - 2]
+                            + "---currentDEA:" + deaArr[deaArr.length - 1]
+                            + "---lastDEA:" + deaArr[deaArr.length - 2]
+                    );
+                    System.out.println(getTimeFormat(System.currentTimeMillis()) + "***已成功下单" + poRequest + "张！***" + poRequest.toString());
                 }
                 poRequest.setCurrentTakeOrder(false);
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(sleepMillis);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -202,7 +203,7 @@ public class Test {
                 } else {
                     //无持仓只考虑开仓，判断 DIF&DEA 是否交叉
                     if (currentDif > currentDea
-                            && lastDif < lastDea
+                            && lastDif <= lastDea
                             && Math.abs(currentDif - lastDif) > dynamicNum
                             && currentMacd > -0.3
                     ) {
@@ -211,7 +212,7 @@ public class Test {
                         System.out.println("KLine出线金叉，转为多头，已开仓！！！");
                         poRequest.setCurrentTakeOrder(true);
                         return;
-                    } else if (currentDif < currentDea
+                    } else if (currentDif <= currentDea
                             && lastDif > lastDea
                             && Math.abs(currentDif - lastDif) > dynamicNum
                             && currentMacd < 0.3
