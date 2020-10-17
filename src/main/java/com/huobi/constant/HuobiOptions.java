@@ -18,6 +18,7 @@ public class HuobiOptions implements Options {
   //合约
   //https://api.btcgateway.pro
   //境外推荐使用https://api.hbdm.com
+  //https://api.hbdm.vn
 
   //币币
   //https://www.huobi.fm
