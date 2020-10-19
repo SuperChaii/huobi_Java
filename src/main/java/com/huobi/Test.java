@@ -12,6 +12,7 @@ import com.huobi.model.contract.ContractAccount;
 import com.huobi.model.contract.ContractKline;
 import com.huobi.model.contract.ContractPosition;
 import com.huobi.utils.IndicatrixImpl;
+import com.huobi.utils.quant.QuantIndicators;
 
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
@@ -26,6 +27,7 @@ public class Test {
         final Long sleepMillis = 2000L;
 
         ContractPlaceOrderRequest poRequest = new ContractPlaceOrderRequest();
+        QuantIndicators qiUtils = new QuantIndicators();
         poRequest.setVolume(1L);
         poRequest.setDirection("buy");
         poRequest.setOffset("open");
@@ -50,13 +52,21 @@ public class Test {
             try {
                 //获取收盘价，根据K线图
                 closeList = getCloseListByKLine(contractService, CONTRACTCODE, CandlestickIntervalEnum.MIN15, 50);
+                //获取BOLL指标
+                Double[] closePrice = closeList.toArray(new Double[closeList.size()]);
+                double[] doubleArr = new double[closePrice.length];
+                for (int i = 0; i < closePrice.length; i++) {
+                    doubleArr[i] = closePrice[i];
+                }
+                double[][] bollArr= qiUtils.boll(doubleArr);
 
+                //获取MACD指标
                 Double[] macdArr = new Double[closeList.size()];
                 Double[] deaArr = new Double[closeList.size()];
                 Double[] difArr = new Double[closeList.size()];
-                //获取MACD数组
                 impl.MACD(closeList.toArray(new Double[closeList.size()]), 12, 26, 9, macdArr, deaArr, difArr);
-                getMacdArray(poRequest, difArr, deaArr, macdArr);
+                //根据macd & boll指标判断是否下单
+                getOrderByMacdAndBoll(poRequest, difArr, deaArr, macdArr, bollArr);
                 //合约下单
                 if (poRequest.getCurrentTakeOrder()) {
                     takeOrder(CONTRACTCODE, contractService, poRequest.getVolume(), poRequest.getDirection(),
@@ -157,7 +167,7 @@ public class Test {
         return null;
     }
 
-    private static void getMacdArray(ContractPlaceOrderRequest poRequest, Double[] difArr, Double[] deaArr, Double[] macdArr) {
+    private static void getOrderByMacdAndBoll(ContractPlaceOrderRequest poRequest, Double[] difArr, Double[] deaArr, Double[] macdArr, double[][] bollArr) {
         double dynamicNum = poRequest.getDynamicNum();
         Double lastDif = null;
         Double lastDea = null;
