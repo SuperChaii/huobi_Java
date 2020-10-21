@@ -115,7 +115,7 @@
             <manifest>
               <addClasspath>true</addClasspath>
               <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>com.huobi.Test</mainClass>
+              <mainClass>com.huobi.MasterMain</mainClass>
             </manifest>
           </archive>
         </configuration>

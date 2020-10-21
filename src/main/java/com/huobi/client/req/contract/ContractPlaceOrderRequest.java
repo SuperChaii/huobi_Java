@@ -39,5 +39,14 @@ public class ContractPlaceOrderRequest {
     private Double dynamicNum;
     // 自定义-本次是否下单
     private Boolean currentTakeOrder = false;
-
+    // 自定义 - 5日最高最低价
+    private double high5Price;
+    // 自定义 - 5日最高最低价
+    private double low5Price;
+    // 自定义 - 30日最高最低价
+    double high30Price;
+    // 自定义 - 30日最高最低价
+    double low30Price;
+    //true:当前为趋势 ， false:当前为波段
+    private Boolean trendType;
 }
