@@ -31,22 +31,5 @@ public class ContractPlaceOrderRequest {
     // 	"opponent_fok"：对手价-FOK下单，"optimal_5_fok"：最优5档-FOK下单，"optimal_10_fok"：最优10档-FOK下单，"optimal_20_fok"：最优20档-FOK下单
     private String orderPriceType;
 
-    // 自定义-判断是否持仓（有持仓则不开仓）
-    private Boolean haveOrder;
-    // 自定义-当前持仓方向 "open":开 "close":平
-    private String havaOrderDirection;
-    // 自定义-容错系数
-    private Double dynamicNum;
-    // 自定义-本次是否下单
-    private Boolean currentTakeOrder = false;
-    // 自定义 - 5日最高最低价
-    private double high5Price;
-    // 自定义 - 5日最高最低价
-    private double low5Price;
-    // 自定义 - 30日最高最低价
-    double high30Price;
-    // 自定义 - 30日最高最低价
-    double low30Price;
-    //true:当前为趋势 ， false:当前为波段
-    private Boolean trendType;
+
 }
