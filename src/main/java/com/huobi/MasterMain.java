@@ -8,7 +8,6 @@ import com.huobi.client.req.contract.ContractKlineRequest;
 import com.huobi.client.req.contract.ContractParmaDto;
 import com.huobi.client.req.contract.ContractPlaceOrderRequest;
 import com.huobi.constant.HuobiOptions;
-import com.huobi.constant.enums.CandlestickIntervalEnum;
 import com.huobi.model.contract.ContractAccount;
 import com.huobi.model.contract.ContractKline;
 import com.huobi.model.contract.ContractPosition;
@@ -35,9 +34,16 @@ public class MasterMain {
         request.setLeverRate(20);
         request.setOrderPriceType("opponent");
         dto.setDynamicNum(0.1);
-        if(Objects.nonNull(args[0])){
+        if (Objects.nonNull(args[0])
+                && ("1min".equals(args[0])
+                || "5min".equals(args[0])
+                || "15min".equals(args[0])
+                || "60min".equals(args[0])
+                || "4hour".equals(args[0])
+                || "1day".equals(args[0]))
+        ) {
             dto.setPeriodTime(args[0]);
-        }else{
+        } else {
             dto.setPeriodTime("15min");
         }
 
