@@ -12,6 +12,8 @@ public class ContractParmaDto {
     private List<Double> highList;
     private List<Double> lowList;
 
+    //当前KLine周期
+    private String periodTime;
     // 自定义-判断是否持仓（有持仓则不开仓）
     private Boolean haveOrder;
     // 自定义-当前持仓方向 "open":开 "close":平
@@ -38,4 +40,8 @@ public class ContractParmaDto {
     private Double currentHighPrice;
     //上一次最高价
     private Double lastHighPrice;
+    //当前最低价
+    private Double currentLowPrice;
+    //上一次最低价
+    private Double lastLowPrice;
 }

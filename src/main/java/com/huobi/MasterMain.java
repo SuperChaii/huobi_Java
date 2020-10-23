@@ -35,6 +35,11 @@ public class MasterMain {
         request.setLeverRate(20);
         request.setOrderPriceType("opponent");
         dto.setDynamicNum(0.1);
+        if(Objects.nonNull(args[0])){
+            dto.setPeriodTime(args[0]);
+        }else{
+            dto.setPeriodTime("15min");
+        }
 
         Map<String, List<Double>> marketMap;
 
@@ -53,7 +58,7 @@ public class MasterMain {
         while (true) {
             try {
                 //获取收盘价，根据K线图
-                marketMap = getMarketPriceListByKLine(contractService, CONTRACTCODE, CandlestickIntervalEnum.MIN15, 50);
+                marketMap = getMarketPriceListByKLine(contractService, CONTRACTCODE, dto.getPeriodTime(), 50);
                 dto = updateMarketPriceByResult(dto, marketMap);
 
                 //获取BOLL指标
@@ -77,13 +82,7 @@ public class MasterMain {
                 if (dto.getCurrentTakeOrder()) {
                     takeOrder(CONTRACTCODE, contractService, request.getVolume(), request.getDirection(),
                             request.getOffset(), request.getLeverRate(), request.getOrderPriceType());
-                    System.out.println("---currentMACD:" + macdArr[macdArr.length - 1]
-                            + "---lastMACD:" + macdArr[macdArr.length - 2]
-                            + "---currentDIF:" + difArr[difArr.length - 1]
-                            + "---lastDIF:" + difArr[difArr.length - 2]
-                            + "---currentDEA:" + deaArr[deaArr.length - 1]
-                            + "---lastDEA:" + deaArr[deaArr.length - 2]
-                    );
+                    System.out.println(dto.toString());
                     //下单后，多等一秒，防止获取持仓情况延迟
                     try {
                         Thread.sleep(sleepMillis);
@@ -125,16 +124,18 @@ public class MasterMain {
         dto.setLastClosePrice(closeList.get(closeList.size() - 2));
         dto.setCurrentHighPrice(highList.get(highList.size() - 1));
         dto.setLastHighPrice(highList.get(highList.size() - 2));
+        dto.setCurrentLowPrice(lowList.get(lowList.size() - 1));
+        dto.setLastLowPrice(lowList.get(lowList.size() - 2));
         return dto;
     }
 
     private static void getOrderByParams(ContractPlaceOrderRequest request, ContractParmaDto dto, Double[] difArr, Double[] deaArr, Double[] macdArr, double[][] bollArr) {
-        Double lastDif = null;
-        Double lastDea = null;
-        Double lastMacd = null;
-        Double currentDif = null;
-        Double currentDea = null;
-        Double currentMacd = null;
+//        Double lastDif = null;
+//        Double lastDea = null;
+//        Double lastMacd = null;
+//        Double currentDif = null;
+//        Double currentDea = null;
+//        Double currentMacd = null;
         double upBoll = bollArr[0][bollArr[0].length - 1];
         double midBoll = bollArr[1][bollArr[1].length - 1];
         double lowBoll = bollArr[2][bollArr[2].length - 1];
@@ -143,8 +144,10 @@ public class MasterMain {
         //以下为开仓逻辑：
         if (!dto.getHaveOrder()) {
             //判断 当前价格是否连续突破30日前高或前低，突破则转换为趋势行情，否则为波段
-            if (dto.getCurrentHighPrice() >= dto.getHigh30Price() ||
-                    dto.getCurrentHighPrice() <= dto.getHigh30Price()
+            if (dto.getCurrentHighPrice() >= dto.getHigh30Price()
+                    || dto.getLastHighPrice() >= dto.getHigh30Price()
+                    || dto.getCurrentLowPrice() <= dto.getLow30Price()
+                    || dto.getLastLowPrice() <= dto.getLow30Price()
             ) {
                 //趋势行情
                 dto.setTrendType(true);
@@ -191,7 +194,7 @@ public class MasterMain {
                     dto.setCurrentTakeOrder(true);
                     System.out.println("***当前为【趋势】行情做多，跌破5日k线，已【平多】仓" + request.getVolume() + "张！！");
                 } else if ("sell".equals(dto.getHavaOrderDirection())
-                        && (currentPrice >= dto.getHigh5Price() || currentPrice > upBoll)
+                        && (currentPrice >= dto.getHigh5Price() || currentPrice >= upBoll)
                 ) {
                     //当趋势突破5日k最高价时平仓
                     request.setOffset("close");
@@ -200,22 +203,26 @@ public class MasterMain {
                     System.out.println("***当前为【趋势】行情做空，突破上轨，已【平空】仓" + request.getVolume() + "张！！");
                 }
             } else {
-                //波段行情 -> 止盈:突破upboll，止损：跌破5日k最低价
+                //波段行情 -> 止盈:突破upboll，止损：跌破30日k最低价
                 if ("buy".equals(dto.getHavaOrderDirection())
-                        && (currentPrice >= upBoll || currentPrice <= dto.getLow5Price())
+                        && (currentPrice >= upBoll || currentPrice <= dto.getLow30Price())
                 ) {
                     request.setOffset("close");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【波段】行情做多 -> 止盈:突破upboll / 止损：跌破5日k最低价，已【平多】仓" + request.getVolume() + "张！！");
-                }else if("sell".equals(dto.getHavaOrderDirection())
-                    && (currentPrice <= lowBoll || currentPrice >= dto.getHigh5Price())
-                ){
+                    System.out.println("***当前为【波段】行情做多 -> " +
+                            "止盈:突破upboll【" + (currentPrice >= upBoll) +
+                            "】 / 止损：跌破30日k最低价【" + (currentPrice <= dto.getLow30Price()) + "】，已【平多】仓" + request.getVolume() + "张！！");
+                } else if ("sell".equals(dto.getHavaOrderDirection())
+                        && (currentPrice <= lowBoll || currentPrice >= dto.getHigh30Price())
+                ) {
                     //波段行情 -> 止盈:跌破lowBoll，止损：突破5k最高价
                     request.setOffset("close");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【波段】行情做空 -> 已止盈:跌破lowBoll/止损：突破5k最高价，已【平空】仓" + request.getVolume() + "张！！");
+                    System.out.println("***当前为【波段】行情做空 -> " +
+                            "已止盈:跌破lowBoll【" + (currentPrice <= lowBoll) +
+                            "】 /止损：突破30k最高价【" + (currentPrice >= dto.getHigh30Price()) + "】，已【平空】仓" + request.getVolume() + "张！！");
                 }
             }
         }
@@ -300,7 +307,7 @@ public class MasterMain {
             //无持仓，获取账户余额，计算开仓张数（当前杠杆下满仓）
             contractAccount = getContractAccount(CONTRACTCODE, contractService);
             //获取当前价格
-            closeList = getMarketPriceListByKLine(contractService, CONTRACTCODE, CandlestickIntervalEnum.MIN1, 1).get("closeList");
+            closeList = getMarketPriceListByKLine(contractService, CONTRACTCODE, dto.getPeriodTime(), 1).get("closeList");
             request.setVolume(contractAccount.getMargin_available()
                     .multiply(new BigDecimal(closeList.get(closeList.size() - 1)))
                     .multiply(new BigDecimal(request.getLeverRate()))
@@ -353,14 +360,14 @@ public class MasterMain {
 
 
     private static Map<String, List<Double>> getMarketPriceListByKLine(ContractClient contractService, String
-            contractCode, CandlestickIntervalEnum periodEnum, Integer size) {
+            contractCode, String periodTime, Integer size) {
         Map<String, List<Double>> resultMap = new HashMap<>();
         ArrayList<Double> closeList = new ArrayList<>();
         ArrayList<Double> highList = new ArrayList<>();
         ArrayList<Double> lowList = new ArrayList<>();
         List<ContractKline> contractAccountList = contractService.getContractKline(ContractKlineRequest.builder()
                 .contractCode(contractCode)
-                .period(periodEnum.getCode())
+                .period(periodTime)
                 .size(size)
                 .build());
         //获取周期内收盘价

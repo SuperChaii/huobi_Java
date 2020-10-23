@@ -31,5 +31,4 @@ public class ContractPlaceOrderRequest {
     // 	"opponent_fok"：对手价-FOK下单，"optimal_5_fok"：最优5档-FOK下单，"optimal_10_fok"：最优10档-FOK下单，"optimal_20_fok"：最优20档-FOK下单
     private String orderPriceType;
 
-
 }
