@@ -21,9 +21,9 @@ import java.util.*;
 
 public class MasterMain {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         final String CONTRACTCODE = "BTC-USD";
-        final Long sleepMillis = 2000L;
+        final Long sleepMillis = 1000L;
 
         ContractPlaceOrderRequest request = new ContractPlaceOrderRequest();
         ContractParmaDto dto = new ContractParmaDto();
@@ -31,9 +31,9 @@ public class MasterMain {
         request.setVolume(1L);
         request.setDirection("buy");
         request.setOffset("open");
-        request.setLeverRate(20);
         request.setOrderPriceType("opponent");
         dto.setDynamicNum(0.1);
+        //校验入参格式，并赋值
         if (Objects.nonNull(args[0])
                 && ("1min".equals(args[0])
                 || "5min".equals(args[0])
@@ -45,6 +45,12 @@ public class MasterMain {
             dto.setPeriodTime(args[0]);
         } else {
             dto.setPeriodTime("15min");
+        }
+        //校验入参格式，并赋值(默认20X)
+        if (Objects.nonNull(args[1])) {
+            request.setLeverRate(Integer.valueOf(args[1]));
+        } else {
+            request.setLeverRate(20);
         }
 
         Map<String, List<Double>> marketMap;
@@ -89,23 +95,23 @@ public class MasterMain {
                     takeOrder(CONTRACTCODE, contractService, request.getVolume(), request.getDirection(),
                             request.getOffset(), request.getLeverRate(), request.getOrderPriceType());
                     System.out.println(dto.toString());
-                    //下单后，多等一秒，防止获取持仓情况延迟
                     try {
+                        //下单后，多等一秒，防止获取持仓情况延迟
+                        //更新持仓情况及最大下单量
                         Thread.sleep(sleepMillis);
+                        updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
                     } catch (InterruptedException e) {
+                        updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
+                        System.out.println("updateHaveOrderAndVolume:repeat->" + e.getMessage());
                         e.printStackTrace();
                     }
-                    //获取持仓情况及最大下单量
-                    updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
                     System.out.println(getTimeFormat(System.currentTimeMillis()) + "---已成功下单" + request.getVolume() + "张！---" + request.toString());
                 }
+                //收尾
                 dto.setCurrentTakeOrder(false);
-                try {
-                    Thread.sleep(sleepMillis);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                Thread.sleep(sleepMillis);
             } catch (Exception e) {
+                Thread.sleep(sleepMillis);
                 System.out.println(e.getMessage());
             }
         }
@@ -188,7 +194,7 @@ public class MasterMain {
         } else {
             //平仓逻辑：判断开仓时是趋势还是波段
             //如果是趋势行情：当跌/突破5日k线平仓
-            if (dto.getTrendType()) {
+            if (Objects.nonNull(dto.getTrendType()) && dto.getTrendType()) {
                 //趋势无止盈，只有止损:当跌破5日k线最低价 / 跌破lowBoll价格平仓
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentPrice <= dto.getLow5Price() || currentPrice < lowBoll)
