@@ -3,10 +3,7 @@ package com.huobi;
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.huobi.client.ContractClient;
-import com.huobi.client.req.contract.ContractAccountRequest;
-import com.huobi.client.req.contract.ContractKlineRequest;
-import com.huobi.client.req.contract.ContractParmaDto;
-import com.huobi.client.req.contract.ContractPlaceOrderRequest;
+import com.huobi.client.req.contract.*;
 import com.huobi.constant.HuobiOptions;
 import com.huobi.model.contract.ContractAccount;
 import com.huobi.model.contract.ContractKline;
@@ -25,14 +22,13 @@ public class MasterMain {
         final String CONTRACTCODE = "BTC-USD";
         final Long sleepMillis = 1000L;
 
-        ContractPlaceOrderRequest request = new ContractPlaceOrderRequest();
+        ContractUniversalRequest request = new ContractUniversalRequest();
         ContractParmaDto dto = new ContractParmaDto();
         QuantIndicators qiUtils = new QuantIndicators();
         request.setVolume(1L);
         request.setDirection("buy");
         request.setOffset("open");
-        request.setOrderPriceType("opponent");
-        dto.setDynamicNum(0.1);
+        request.setOrderPriceType("optimal_20");
         //校验入参格式，并赋值
         if (Objects.nonNull(args[0])
                 && ("1min".equals(args[0])
@@ -88,7 +84,7 @@ public class MasterMain {
                 Double[] difArr = new Double[dto.getCloseList().size()];
                 impl.MACD(dto.getCloseList().toArray(new Double[dto.getCloseList().size()]), 12, 26, 9, macdArr, deaArr, difArr);
 
-                //根据macd & boll & high & low 指标判断是否下单
+                //根据macd & boll & KLine 指标判断是否下单
                 getOrderByParams(request, dto, difArr, deaArr, macdArr, bollArr);
                 //合约下单
                 if (dto.getCurrentTakeOrder()) {
@@ -141,13 +137,7 @@ public class MasterMain {
         return dto;
     }
 
-    private static void getOrderByParams(ContractPlaceOrderRequest request, ContractParmaDto dto, Double[] difArr, Double[] deaArr, Double[] macdArr, double[][] bollArr) {
-//        Double lastDif = null;
-//        Double lastDea = null;
-//        Double lastMacd = null;
-//        Double currentDif = null;
-//        Double currentDea = null;
-//        Double currentMacd = null;
+    private static void getOrderByParams(ContractUniversalRequest request, ContractParmaDto dto, Double[] difArr, Double[] deaArr, Double[] macdArr, double[][] bollArr) {
         double upBoll = bollArr[0][bollArr[0].length - 1];
         double midBoll = bollArr[1][bollArr[1].length - 1];
         double lowBoll = bollArr[2][bollArr[2].length - 1];
@@ -240,69 +230,10 @@ public class MasterMain {
         }
 
 
-//        for (int i = 1; i < 3; i++) {
-//            currentDif = difArr[difArr.length - i];
-//            currentDea = deaArr[deaArr.length - i];
-//            currentMacd = macdArr[macdArr.length - i];
-//            lastDif = difArr[difArr.length - i - 1];
-//            lastDea = deaArr[deaArr.length - i - 1];
-//            lastMacd = macdArr[macdArr.length - i - 1];
-//
-//            //判断上一次是否有值
-//            if (lastDif != null && lastDea != null && lastMacd != null) {
-//                if (request.getHaveOrder()) {
-//                    //有持仓则只考虑平仓，判断是否出现背离
-//                    if ("buy".equals(request.getHavaOrderDirection())) {
-//                        if (currentDif < lastDif
-//                                && currentDea < lastDea
-//                                && currentMacd < lastMacd
-//                        ) {
-//                            request.setOffset("close");
-//                            request.setDirection("sell");
-//                            System.out.println("***行情转空头，已平仓" + request.getVolume() + "张！！");
-//                            request.setCurrentTakeOrder(true);
-//                            return;
-//                        }
-//                    } else if ("sell".equals(request.getHavaOrderDirection())) {
-//                        if (currentDif > lastDif
-//                                && currentDea > lastDea
-//                                && currentMacd > lastMacd
-//                        ) {
-//                            request.setOffset("close");
-//                            request.setDirection("buy");
-//                            System.out.println("***行情转多头，已平仓" + request.getVolume() + "张！！");
-//                            request.setCurrentTakeOrder(true);
-//                            return;
-//                        }
-//                    }
-//                } else {
-//                    //无持仓只考虑开仓，判断三线同一方向则开单
-//                    if (currentDif > lastDif
-//                            && currentDea > lastDea
-//                            && currentMacd > lastMacd
-//                    ) {
-//                        request.setOffset("open");
-//                        request.setDirection("buy");
-//                        System.out.println("***满足开多仓条件，已开：" + request.getVolume() + "张！！***");
-//                        request.setCurrentTakeOrder(true);
-//                        return;
-//                    } else if (currentDif < lastDif
-//                            && currentDea < lastDea
-//                            && currentMacd < lastMacd
-//                    ) {
-//                        request.setOffset("open");
-//                        request.setDirection("sell");
-//                        System.out.println("***满足开空仓条件，已开：" + request.getVolume() + "张！！***");
-//                        request.setCurrentTakeOrder(true);
-//                        return;
-//                    }
-//                }
-//            }
-//        }
     }
 
 
-    private static void updateHaveOrderAndVolume(String CONTRACTCODE, ContractPlaceOrderRequest request, ContractParmaDto dto, ContractClient contractService) {
+    private static void updateHaveOrderAndVolume(String CONTRACTCODE, ContractUniversalRequest request, ContractParmaDto dto, ContractClient contractService) {
         ContractPosition contractPosition;
         ContractAccount contractAccount;
         List<Double> closeList;
@@ -342,6 +273,19 @@ public class MasterMain {
                 .offset(offset)
                 .leverRate(leverRate)
                 .orderPriceType(orderPriceType)
+                .build());
+    }
+    private static void triggerOrder(ContractClient contractService , ContractUniversalRequest request) {
+        JSONObject json = contractService.triggerOrder(ContractTriggerOrderRequest.builder()
+                .contractCode(request.getContractCode())
+                .volume(request.getVolume())
+                .direction(request.getDirection())
+                .leverRate(request.getLeverRate())
+                .offset(request.getOffset())
+                .orderPrice(request.getOrderPrice())
+                .orderPriceType(request.getOrderPriceType())
+                .triggerPrice(request.getTriggerPrice())
+                .triggerType(request.getTriggerType())
                 .build());
     }
 

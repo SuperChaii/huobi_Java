@@ -6,6 +6,7 @@ import com.huobi.client.ContractClient;
 import com.huobi.client.req.contract.ContractAccountRequest;
 import com.huobi.client.req.contract.ContractKlineRequest;
 import com.huobi.client.req.contract.ContractPlaceOrderRequest;
+import com.huobi.client.req.contract.ContractTriggerOrderRequest;
 import com.huobi.constant.Options;
 import com.huobi.constant.enums.AccountTypeEnum;
 import com.huobi.model.account.Account;
@@ -29,9 +30,8 @@ public class HuobiContractService implements ContractClient {
     public static final String POST_CONTRACT_POSITION_PATH = "/swap-api/v1/swap_position_info";
     //合约下单
     public static final String POST_CONTRACT_ORDER = "/swap-api/v1/swap_order";
-
-    private Map<AccountTypeEnum, Account> accountMap = new ConcurrentHashMap<>();
-    private Map<String, Account> marginAccountMap = new ConcurrentHashMap<>();
+    //合约计划委托下单
+    public static final String POST_CONTRACT_TRIGGER_ORDER = "/swap-api/v1/swap_trigger_order";
 
     private Options options;
 
@@ -76,12 +76,33 @@ public class HuobiContractService implements ContractClient {
     public JSONObject placeOrder(ContractPlaceOrderRequest request) {
         return restConnection.executePostWithSignature(POST_CONTRACT_ORDER,
                 UrlParamsBuilder.build()
-                        .putToPost("contract_code",request.getContractCode())
-                        .putToPost("volume",request.getVolume())
-                        .putToPost("direction",request.getDirection())
-                        .putToPost("offset",request.getOffset())
-                        .putToPost("lever_rate",request.getLeverRate())
-                        .putToPost("order_price_type",request.getOrderPriceType())
+                        .putToPost("contract_code", request.getContractCode())
+                        .putToPost("volume", request.getVolume())
+                        .putToPost("direction", request.getDirection())
+                        .putToPost("offset", request.getOffset())
+                        .putToPost("lever_rate", request.getLeverRate())
+                        .putToPost("order_price_type", request.getOrderPriceType())
+        );
+    }
+
+    @Override
+    public JSONObject batchPlaceOrder(List<ContractPlaceOrderRequest> buildList) {
+        //TODO
+        return null;
+    }
+
+    @Override
+    public JSONObject triggerOrder(ContractTriggerOrderRequest request) {
+        return restConnection.executePostWithSignature(POST_CONTRACT_TRIGGER_ORDER,
+                UrlParamsBuilder.build()
+                        .putToPost("contract_code", request.getContractCode())
+                        .putToPost("trigger_type", request.getTriggerType())
+                        .putToPost("order_price", request.getOrderPrice())
+                        .putToPost("order_price_type", request.getOrderPriceType())
+                        .putToPost("volume", request.getVolume())
+                        .putToPost("direction", request.getDirection())
+                        .putToPost("offset", request.getOffset())
+                        .putToPost("lever_rate", request.getLeverRate())
         );
     }
 }

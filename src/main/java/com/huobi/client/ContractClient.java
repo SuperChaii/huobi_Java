@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.huobi.client.req.contract.ContractAccountRequest;
 import com.huobi.client.req.contract.ContractKlineRequest;
 import com.huobi.client.req.contract.ContractPlaceOrderRequest;
+import com.huobi.client.req.contract.ContractTriggerOrderRequest;
 import com.huobi.constant.Options;
 import com.huobi.constant.enums.ExchangeEnum;
 import com.huobi.exception.SDKException;
@@ -28,7 +29,11 @@ public interface ContractClient {
     throw new SDKException(SDKException.INPUT_ERROR, "Unsupport Exchange.");
   }
 
-  JSONObject getContractPosition(ContractAccountRequest build);
+  JSONObject getContractPosition(ContractAccountRequest request);
 
-  JSONObject placeOrder(ContractPlaceOrderRequest build);
+  JSONObject placeOrder(ContractPlaceOrderRequest request);
+
+  JSONObject batchPlaceOrder(List<ContractPlaceOrderRequest> requestList);
+
+  JSONObject triggerOrder(ContractTriggerOrderRequest request);
 }
