@@ -90,18 +90,18 @@ public class MasterMain {
                 if (dto.getCurrentTakeOrder()) {
                     takeOrder(CONTRACTCODE, contractService, request.getVolume(), request.getDirection(),
                             request.getOffset(), request.getLeverRate(), request.getOrderPriceType());
-                    System.out.println(dto.toString());
                     try {
                         //下单后，多等一秒，防止获取持仓情况延迟
                         //更新持仓情况及最大下单量
                         Thread.sleep(sleepMillis);
                         updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
+                        System.out.println("***" + getTimeFormat(System.currentTimeMillis()) + "已成功下单" + request.getVolume() + "张！***" + request.toString());
                     } catch (InterruptedException e) {
                         updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
-                        System.out.println("updateHaveOrderAndVolume:repeat->" + e.getMessage());
+                        System.out.println("***updateHaveOrderAndVolume:repeat->" + e.getMessage());
                         e.printStackTrace();
                     }
-                    System.out.println(getTimeFormat(System.currentTimeMillis()) + "---已成功下单" + request.getVolume() + "张！---" + request.toString());
+
                 }
                 //收尾
                 dto.setCurrentTakeOrder(false);
@@ -142,6 +142,7 @@ public class MasterMain {
         double midBoll = bollArr[1][bollArr[1].length - 1];
         double lowBoll = bollArr[2][bollArr[2].length - 1];
         Double currentPrice = dto.getCurrentClosePrice();
+        String currentTime = getTimeFormat(System.currentTimeMillis());
 
         //以下为开仓逻辑：
         if (!dto.getHaveOrder()) {
@@ -158,12 +159,14 @@ public class MasterMain {
                     request.setOffset("open");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【趋势】行情（高买低卖），突破上轨道，已【开多】仓" + request.getVolume() + "张！！");
+                    System.out.println("***" + currentTime + "当前为【趋势】行情（高买低卖），突破上轨道，已【开多】仓" + request.getVolume() + "张！！" +
+                            "currentPrice > upBoll：" + currentPrice + ">" + upBoll);
                 } else if (currentPrice < lowBoll) {
                     request.setOffset("open");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【趋势】行情（高买低卖），跌破下轨道，已【开空】仓" + request.getVolume() + "张！！");
+                    System.out.println("***" + currentTime + "当前为【趋势】行情（高买低卖），跌破下轨道，已【开空】仓" + request.getVolume() + "张！！" +
+                            "currentPrice < lowBoll:" + currentPrice + "<" + lowBoll);
                 }
             } else {
                 //波段行情
@@ -173,12 +176,14 @@ public class MasterMain {
                     request.setOffset("open");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【波段】行情(低买高卖)，突破上轨，已【开空】仓" + request.getVolume() + "张！！");
+                    System.out.println("***" + currentTime + "当前为【波段】行情(低买高卖)，突破上轨，已【开空】仓" + request.getVolume() + "张！！" +
+                            "currentPrice > upBoll:" + currentPrice + ">" + upBoll);
                 } else if (currentPrice < lowBoll) {
                     request.setOffset("open");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【波段】行情(低买高卖)，跌破下轨，已【开多】仓" + request.getVolume() + "张！！");
+                    System.out.println("***" + currentTime + "当前为【波段】行情(低买高卖)，跌破下轨，已【开多】仓" + request.getVolume() + "张！！" +
+                            "currentPrice < lowBoll:" + currentPrice + "<" + lowBoll);
                 }
             }
         } else {
@@ -194,7 +199,9 @@ public class MasterMain {
                     request.setOffset("close");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【趋势】行情做多，跌破5日k线，已【平多】仓" + request.getVolume() + "张！！");
+                    System.out.println("***" + currentTime + "当前为【趋势】行情做多，跌破5日k线，已【平多】仓" + request.getVolume() + "张！！" +
+                            "(currentPrice <= dto.getLow5Price() || currentPrice < lowBoll)"
+                            + currentPrice + "<=" + dto.getLow5Price() + "||" + currentPrice + "<" + lowBoll);
                 } else if ("sell".equals(dto.getHavaOrderDirection())
                         && (currentPrice >= dto.getHigh5Price() || currentPrice >= upBoll)
                 ) {
@@ -202,7 +209,9 @@ public class MasterMain {
                     request.setOffset("close");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【趋势】行情做空，突破上轨，已【平空】仓" + request.getVolume() + "张！！");
+                    System.out.println("***" + currentTime + "当前为【趋势】行情做空，突破上轨，已【平空】仓" + request.getVolume() + "张！！" +
+                            "(currentPrice >= dto.getHigh5Price() || currentPrice >= upBoll)"
+                            + currentPrice + ">=" + dto.getHigh5Price() + "||" + currentPrice + ">=" + upBoll);
                 }
             } else {
                 //波段行情 -> 止盈:突破upboll，止损：跌破30日k最低价
@@ -212,9 +221,12 @@ public class MasterMain {
                     request.setOffset("close");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【波段】行情做多 -> " +
+                    System.out.println("***" + currentTime + "当前为【波段】行情做多 -> " +
                             "止盈:突破upboll【" + (currentPrice >= upBoll) +
-                            "】 / 止损：跌破30日k最低价【" + (currentPrice <= dto.getLow30Price()) + "】，已【平多】仓" + request.getVolume() + "张！！");
+                            "】 / 止损：跌破30日k最低价【" + (currentPrice <= dto.getLow30Price()) + "】，已【平多】仓" + request.getVolume() + "张！！" +
+                            "(currentPrice >= upBoll || currentPrice <= dto.getLow30Price()):"
+                            + currentPrice + ">=" + upBoll + "||"
+                            + currentPrice + "<=" + dto.getLow30Price());
                 } else if ("sell".equals(dto.getHavaOrderDirection())
                         && (currentPrice <= lowBoll || currentPrice >= dto.getHigh30Price())
                 ) {
@@ -222,9 +234,11 @@ public class MasterMain {
                     request.setOffset("close");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
-                    System.out.println("***当前为【波段】行情做空 -> " +
+                    System.out.println("***" + currentTime + "当前为【波段】行情做空 -> " +
                             "已止盈:跌破lowBoll【" + (currentPrice <= lowBoll) +
-                            "】 /止损：突破30k最高价【" + (currentPrice >= dto.getHigh30Price()) + "】，已【平空】仓" + request.getVolume() + "张！！");
+                            "】 /止损：突破30k最高价【" + (currentPrice >= dto.getHigh30Price()) + "】，已【平空】仓" + request.getVolume() + "张！！" +
+                            "(currentPrice <= lowBoll || currentPrice >= dto.getHigh30Price()) "+ currentPrice +"<=" + lowBoll + "||"
+                            + currentPrice + ">=" + dto.getHigh30Price());
                 }
             }
         }
@@ -243,7 +257,7 @@ public class MasterMain {
             dto.setHaveOrder(true);
             dto.setHavaOrderDirection(contractPosition.getDirection());
             request.setVolume(contractPosition.getVolume().longValue());
-            System.out.println("当前持仓量：" + contractPosition.getVolume().doubleValue() + "---当前持仓方向：" + contractPosition.getDirection());
+            System.out.println("***当前持仓量：" + contractPosition.getVolume().doubleValue() + "---当前持仓方向：" + contractPosition.getDirection());
         } else {
             dto.setHaveOrder(false);
             dto.setHavaOrderDirection(null);
@@ -255,7 +269,7 @@ public class MasterMain {
                     .multiply(new BigDecimal(closeList.get(closeList.size() - 1)))
                     .multiply(new BigDecimal(request.getLeverRate()))
                     .divide(new BigDecimal(100)).longValue() - 1);
-            System.out.println("当前无持仓!!!目前最大可开张数为：" + request.getVolume() + "张,倍数为：" + request.getLeverRate());
+            System.out.println("***当前无持仓!!!目前最大可开张数为：" + request.getVolume() + "张,倍数为：" + request.getLeverRate());
         }
     }
 
@@ -275,7 +289,8 @@ public class MasterMain {
                 .orderPriceType(orderPriceType)
                 .build());
     }
-    private static void triggerOrder(ContractClient contractService , ContractUniversalRequest request) {
+
+    private static void triggerOrder(ContractClient contractService, ContractUniversalRequest request) {
         JSONObject json = contractService.triggerOrder(ContractTriggerOrderRequest.builder()
                 .contractCode(request.getContractCode())
                 .volume(request.getVolume())
