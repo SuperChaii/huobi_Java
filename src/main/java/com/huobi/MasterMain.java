@@ -192,7 +192,7 @@ public class MasterMain {
             if (Objects.nonNull(dto.getTrendType()) && dto.getTrendType()) {
                 //趋势无止盈，只有止损:当跌破5日k线最低价 / 跌破lowBoll价格平仓
                 if ("buy".equals(dto.getHavaOrderDirection())
-                        && (currentPrice <= dto.getLow5Price() || currentPrice < lowBoll)
+                        && (currentPrice <= dto.getLow5Price() || currentPrice < midBoll)
 
                 ) {
                     //当趋势跌破5日k最低价时平仓
@@ -200,18 +200,18 @@ public class MasterMain {
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
                     System.out.println("***" + currentTime + "当前为【趋势】行情做多，跌破5日k线，已【平多】仓" + request.getVolume() + "张！！" +
-                            "(currentPrice <= dto.getLow5Price() || currentPrice < lowBoll)"
-                            + currentPrice + "<=" + dto.getLow5Price() + "||" + currentPrice + "<" + lowBoll);
+                            "(currentPrice <= dto.getLow5Price() || currentPrice < midBoll)"
+                            + currentPrice + "<=" + dto.getLow5Price() + "||" + currentPrice + "<" + midBoll);
                 } else if ("sell".equals(dto.getHavaOrderDirection())
-                        && (currentPrice >= dto.getHigh5Price() || currentPrice >= upBoll)
+                        && (currentPrice >= dto.getHigh5Price() || currentPrice >= midBoll)
                 ) {
                     //当趋势突破5日k最高价时平仓
                     request.setOffset("close");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
                     System.out.println("***" + currentTime + "当前为【趋势】行情做空，突破上轨，已【平空】仓" + request.getVolume() + "张！！" +
-                            "(currentPrice >= dto.getHigh5Price() || currentPrice >= upBoll)"
-                            + currentPrice + ">=" + dto.getHigh5Price() + "||" + currentPrice + ">=" + upBoll);
+                            "(currentPrice >= dto.getHigh5Price() || currentPrice >= midBoll)"
+                            + currentPrice + ">=" + dto.getHigh5Price() + "||" + currentPrice + ">=" + midBoll);
                 }
             } else {
                 //波段行情 -> 止盈:突破upboll，止损：跌破30日k最低价
