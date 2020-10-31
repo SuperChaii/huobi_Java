@@ -18,7 +18,7 @@ import java.util.*;
 
 public class MasterMain {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         final String CONTRACTCODE = "BTC-USD";
         final Long sleepMillis = 1000L;
 
@@ -107,8 +107,7 @@ public class MasterMain {
                 dto.setCurrentTakeOrder(false);
                 Thread.sleep(sleepMillis);
             } catch (Exception e) {
-                Thread.sleep(sleepMillis);
-                System.out.println(e.getMessage());
+                System.out.println("***error:getMessage:" + e.getMessage() + "***getStackTrace:" + e.getStackTrace());
             }
         }
     }
@@ -141,6 +140,8 @@ public class MasterMain {
         double upBoll = bollArr[0][bollArr[0].length - 1];
         double midBoll = bollArr[1][bollArr[1].length - 1];
         double lowBoll = bollArr[2][bollArr[2].length - 1];
+        Double currentHighPrice = dto.getCurrentHighPrice();
+        Double currentLowPrice = dto.getCurrentLowPrice();
         Double currentPrice = dto.getCurrentClosePrice();
         String currentTime = getTimeFormat(System.currentTimeMillis());
 
@@ -190,7 +191,7 @@ public class MasterMain {
             //平仓逻辑：判断开仓时是趋势还是波段
             //如果是趋势行情：当跌/突破5日k线平仓
             if (Objects.nonNull(dto.getTrendType()) && dto.getTrendType()) {
-                //趋势无止盈，只有止损:当跌破5日k线最低价 / 跌破lowBoll价格平仓
+                //趋势无止盈，只有止损:当跌破5日k线最低价 / 跌破midBoll价格平仓
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentPrice <= dto.getLow5Price() || currentPrice < midBoll)
 
@@ -214,9 +215,9 @@ public class MasterMain {
                             + currentPrice + ">=" + dto.getHigh5Price() + "||" + currentPrice + ">=" + midBoll);
                 }
             } else {
-                //波段行情 -> 止盈:突破upboll，止损：跌破30日k最低价
+                //波段行情 -> 止盈:突破upboll后回落或突破upboll后跌破5日k低价，止损：跌破30日k最低价
                 if ("buy".equals(dto.getHavaOrderDirection())
-                        && (currentPrice >= upBoll || currentPrice <= dto.getLow30Price())
+                        && (currentHighPrice >= upBoll && (currentPrice <= upBoll || currentPrice <= dto.getLow5Price()) || currentPrice <= dto.getLow30Price())
                 ) {
                     request.setOffset("close");
                     request.setDirection("sell");
@@ -228,7 +229,7 @@ public class MasterMain {
                             + currentPrice + ">=" + upBoll + "||"
                             + currentPrice + "<=" + dto.getLow30Price());
                 } else if ("sell".equals(dto.getHavaOrderDirection())
-                        && (currentPrice <= lowBoll || currentPrice >= dto.getHigh30Price())
+                        && (currentLowPrice <= lowBoll && (currentPrice >= lowBoll || currentPrice >= dto.getHigh5Price()) || currentPrice >= dto.getHigh30Price())
                 ) {
                     //波段行情 -> 止盈:跌破lowBoll，止损：突破5k最高价
                     request.setOffset("close");
@@ -237,7 +238,7 @@ public class MasterMain {
                     System.out.println("***" + currentTime + "当前为【波段】行情做空 -> " +
                             "已止盈:跌破lowBoll【" + (currentPrice <= lowBoll) +
                             "】 /止损：突破30k最高价【" + (currentPrice >= dto.getHigh30Price()) + "】，已【平空】仓" + request.getVolume() + "张！！" +
-                            "(currentPrice <= lowBoll || currentPrice >= dto.getHigh30Price()) "+ currentPrice +"<=" + lowBoll + "||"
+                            "(currentPrice <= lowBoll || currentPrice >= dto.getHigh30Price()) " + currentPrice + "<=" + lowBoll + "||"
                             + currentPrice + ">=" + dto.getHigh30Price());
                 }
             }
@@ -280,6 +281,7 @@ public class MasterMain {
 
     private static void takeOrder(String contractcode, ContractClient contractService, Long volume,
                                   String direction, String offset, Integer leverRate, String orderPriceType) {
+        System.out.println("***TakeOrder准备下单：direction:" + direction + "offset" + offset + "leverRate" + leverRate + "orderPriceType" + orderPriceType + "volume" + volume);
         JSONObject json = contractService.placeOrder(ContractPlaceOrderRequest.builder()
                 .contractCode(contractcode)
                 .volume(volume)
@@ -288,6 +290,7 @@ public class MasterMain {
                 .leverRate(leverRate)
                 .orderPriceType(orderPriceType)
                 .build());
+        System.out.println("***已成功下单JsonString:"+json.toString());
     }
 
     private static void triggerOrder(ContractClient contractService, ContractUniversalRequest request) {
