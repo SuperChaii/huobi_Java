@@ -18,7 +18,7 @@ import java.util.*;
 
 public class MasterMain {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         final String CONTRACTCODE = "BTC-USD";
         final Long sleepMillis = 1000L;
 
@@ -100,7 +100,11 @@ public class MasterMain {
                 dto.setCurrentTakeOrder(false);
                 Thread.sleep(sleepMillis);
             } catch (Exception e) {
-                System.out.println("***error:getMessage:" + e.getMessage() + "***getStackTrace:" + e.getStackTrace());
+                e.printStackTrace();
+                System.out.println("***e.getMessage=" + e.getMessage());
+                System.out.println("***e=" + e);
+                //如报错等待60秒
+                Thread.sleep(60000);
             }
         }
     }
@@ -210,29 +214,28 @@ public class MasterMain {
             } else {
                 //波段行情 -> 止盈:突破upboll后回落或突破upboll后跌破5日k低价，止损：跌破30日k最低价
                 if ("buy".equals(dto.getHavaOrderDirection())
-                        && (currentHighPrice >= upBoll && (currentPrice <= upBoll || currentPrice <= dto.getLow5Price()) || currentPrice <= dto.getLow30Price())
+                        && (currentHighPrice >= upBoll || currentPrice <= dto.getLow30Price())
                 ) {
-                    request.setOffset("close");
-                    request.setDirection("sell");
-                    dto.setCurrentTakeOrder(true);
-                    System.out.println("***" + currentTime + "当前为【波段】行情做多 -> " +
-                            "止盈:突破upboll【" + (currentPrice >= upBoll) +
-                            "】 / 止损：跌破30日k最低价【" + (currentPrice <= dto.getLow30Price()) + "】，已【平多】仓" + request.getVolume() + "张！！" +
-                            "(currentPrice >= upBoll || currentPrice <= dto.getLow30Price()):"
-                            + currentPrice + ">=" + upBoll + "||"
-                            + currentPrice + "<=" + dto.getLow30Price());
+                    if (currentPrice <= upBoll || currentPrice <= dto.getLow5Price()) {
+                        request.setOffset("close");
+                        request.setDirection("sell");
+                        dto.setCurrentTakeOrder(true);
+                        System.out.println("***" + currentTime + "当前为【波段】行情做多 -> 已【平多】仓" + request.getVolume() + "张！！" +
+                                "currentHighPrice >= upBoll ; currentPrice <= dto.getLow30Price() ; currentPrice <= upBoll ; currentPrice <= dto.getLow5Price() "
+                                + (currentHighPrice >= upBoll) + ";" + (currentPrice <= dto.getLow30Price()) + ";" + (currentPrice <= upBoll) + ";" + (currentPrice <= dto.getLow5Price()));
+                    }
                 } else if ("sell".equals(dto.getHavaOrderDirection())
-                        && (currentLowPrice <= lowBoll && (currentPrice >= lowBoll || currentPrice >= dto.getHigh5Price()) || currentPrice >= dto.getHigh30Price())
+                        && (currentLowPrice <= lowBoll || currentPrice >= dto.getHigh30Price())
                 ) {
-                    //波段行情 -> 止盈:跌破lowBoll，止损：突破5k最高价
-                    request.setOffset("close");
-                    request.setDirection("buy");
-                    dto.setCurrentTakeOrder(true);
-                    System.out.println("***" + currentTime + "当前为【波段】行情做空 -> " +
-                            "已止盈:跌破lowBoll【" + (currentPrice <= lowBoll) +
-                            "】 /止损：突破30k最高价【" + (currentPrice >= dto.getHigh30Price()) + "】，已【平空】仓" + request.getVolume() + "张！！" +
-                            "(currentPrice <= lowBoll || currentPrice >= dto.getHigh30Price()) " + currentPrice + "<=" + lowBoll + "||"
-                            + currentPrice + ">=" + dto.getHigh30Price());
+                    if (currentPrice >= lowBoll || currentPrice >= dto.getHigh5Price()) {
+                        //波段行情 -> 止盈:跌破lowBoll，止损：突破5k最高价
+                        request.setOffset("close");
+                        request.setDirection("buy");
+                        dto.setCurrentTakeOrder(true);
+                        System.out.println("***" + currentTime + "当前为【波段】行情做空 ->已【平空】仓" + request.getVolume() + "张！！" +
+                                "currentLowPrice <= lowBoll ; currentPrice >= dto.getHigh30Price() ; currentPrice >= lowBoll ; currentPrice >= dto.getHigh5Price()) || "
+                                + (currentLowPrice <= lowBoll) + ";" + (currentPrice >= dto.getHigh30Price()) + (currentPrice >= lowBoll) + ";" + (currentPrice >= dto.getHigh5Price()) + ";");
+                    }
                 }
             }
         }
@@ -251,7 +254,7 @@ public class MasterMain {
             dto.setHaveOrder(true);
             dto.setHavaOrderDirection(contractPosition.getDirection());
             request.setVolume(contractPosition.getVolume().longValue());
-            System.out.println("***当前持仓量：" + contractPosition.getVolume().doubleValue() + "---当前持仓方向：" + contractPosition.getDirection());
+            System.out.println(">" + contractPosition.getVolume().doubleValue() + "，" + contractPosition.getDirection());
         } else {
             dto.setHaveOrder(false);
             dto.setHavaOrderDirection(null);
@@ -263,7 +266,7 @@ public class MasterMain {
                     .multiply(new BigDecimal(closeList.get(closeList.size() - 1)))
                     .multiply(new BigDecimal(request.getLeverRate()))
                     .divide(new BigDecimal(100)).longValue() - 1);
-            System.out.println("***当前无持仓!!!目前最大可开张数为：" + request.getVolume() + "张,倍数为：" + request.getLeverRate());
+            System.out.println(">无持仓!可开：" + request.getVolume() + "张," + request.getLeverRate());
         }
     }
 
@@ -283,7 +286,7 @@ public class MasterMain {
                 .leverRate(leverRate)
                 .orderPriceType(orderPriceType)
                 .build());
-        System.out.println("***已成功下单"+volume+"张，JsonString:"+json.toString());
+        System.out.println("***已成功下单" + volume + "张，JsonString:" + json.toString());
     }
 
     private static void triggerOrder(ContractClient contractService, ContractUniversalRequest request) {
