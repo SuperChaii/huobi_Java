@@ -60,11 +60,16 @@ public class MasterMain {
                 .apiKey(Constants.API_KEY)
                 .secretKey(Constants.SECRET_KEY)
                 .build());
-        //获取持仓情况及最大下单量
-        updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
-
         while (true) {
             try {
+                try {
+                    //更新持仓情况及最大下单量
+                    updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
+                } catch (Exception e) {
+                    updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
+                    System.out.println("***updateHaveOrderAndVolume:repeat->" + e.getMessage());
+                    e.printStackTrace();
+                }
                 //获取收盘价，根据K线图
                 marketMap = getMarketPriceListByKLine(contractService, CONTRACTCODE, dto.getPeriodTime(), 50);
                 dto = updateMarketPriceByResult(dto, marketMap);
@@ -90,18 +95,6 @@ public class MasterMain {
                 if (dto.getCurrentTakeOrder()) {
                     takeOrder(CONTRACTCODE, contractService, request.getVolume(), request.getDirection(),
                             request.getOffset(), request.getLeverRate(), request.getOrderPriceType());
-                    try {
-                        //下单后，多等一秒，防止获取持仓情况延迟
-                        //更新持仓情况及最大下单量
-                        Thread.sleep(sleepMillis);
-                        updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
-                        System.out.println("***" + getTimeFormat(System.currentTimeMillis()) + "已成功下单" + request.getVolume() + "张！***" + request.toString());
-                    } catch (InterruptedException e) {
-                        updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
-                        System.out.println("***updateHaveOrderAndVolume:repeat->" + e.getMessage());
-                        e.printStackTrace();
-                    }
-
                 }
                 //收尾
                 dto.setCurrentTakeOrder(false);
@@ -290,7 +283,7 @@ public class MasterMain {
                 .leverRate(leverRate)
                 .orderPriceType(orderPriceType)
                 .build());
-        System.out.println("***已成功下单JsonString:"+json.toString());
+        System.out.println("***已成功下单"+volume+"张，JsonString:"+json.toString());
     }
 
     private static void triggerOrder(ContractClient contractService, ContractUniversalRequest request) {
