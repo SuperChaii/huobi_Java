@@ -101,8 +101,7 @@ public class MasterMain {
                 Thread.sleep(sleepMillis);
             } catch (Exception e) {
                 e.printStackTrace();
-                System.out.println("***e.getMessage=" + e.getMessage());
-                System.out.println("***e=" + e);
+                System.out.println("***" + getTimeFormat(System.currentTimeMillis()) + "-e.getMessage=" + e.getMessage());
                 //如报错等待60秒
                 Thread.sleep(60000);
             }
