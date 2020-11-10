@@ -22,9 +22,9 @@ public class ContractParmaDto {
     private Double dynamicNum;
     // 自定义-本次是否下单
     private Boolean currentTakeOrder = false;
-    // 自定义 - 5日最高最低价
+    // 自定义 - 短周期最高价
     private double high5Price;
-    // 自定义 - 5日最高最低价
+    // 自定义 - 短周期最高最低价
     private double low5Price;
     // 自定义 - 30日最高最低价
     double high30Price;
@@ -44,4 +44,8 @@ public class ContractParmaDto {
     private Double currentLowPrice;
     //上一次最低价
     private Double lastLowPrice;
+    //kline长周期定义
+    private Integer longLineCycle;
+    //kline短周期定义
+    private Integer shortLineCycle;
 }

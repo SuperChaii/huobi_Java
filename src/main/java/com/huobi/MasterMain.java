@@ -19,40 +19,19 @@ import java.util.*;
 public class MasterMain {
 
     public static void main(String[] args) throws InterruptedException {
-        final String CONTRACTCODE = "BTC-USD";
-        final Long sleepMillis = 1000L;
-
         ContractUniversalRequest request = new ContractUniversalRequest();
         ContractParmaDto dto = new ContractParmaDto();
         QuantIndicators qiUtils = new QuantIndicators();
+        Map<String, List<Double>> marketMap;
+        IndicatrixImpl impl = new IndicatrixImpl();
+
+        final Long sleepMillis = 1000L;
         request.setVolume(1L);
         request.setDirection("buy");
         request.setOffset("open");
         request.setOrderPriceType("optimal_20");
-        //校验入参格式，并赋值
-        if (Objects.nonNull(args[0])
-                && ("1min".equals(args[0])
-                || "5min".equals(args[0])
-                || "15min".equals(args[0])
-                || "60min".equals(args[0])
-                || "4hour".equals(args[0])
-                || "1day".equals(args[0]))
-        ) {
-            dto.setPeriodTime(args[0]);
-        } else {
-            dto.setPeriodTime("15min");
-        }
-        //校验入参格式，并赋值(默认20X)
-        if (Objects.nonNull(args[1])) {
-            request.setLeverRate(Integer.valueOf(args[1]));
-        } else {
-            request.setLeverRate(20);
-        }
-
-        Map<String, List<Double>> marketMap;
-
-        IndicatrixImpl impl = new IndicatrixImpl();
-
+        //args[]参数校验并为request,dto赋值
+        validParams(request, dto);
 
         //获取合约客户端
         ContractClient contractService = ContractClient.create(HuobiOptions.builder()
@@ -64,14 +43,14 @@ public class MasterMain {
             try {
                 try {
                     //更新持仓情况及最大下单量
-                    updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
+                    updateHaveOrderAndVolume(request.getContractCode(), request, dto, contractService);
                 } catch (Exception e) {
-                    updateHaveOrderAndVolume(CONTRACTCODE, request, dto, contractService);
+                    updateHaveOrderAndVolume(request.getContractCode(), request, dto, contractService);
                     System.out.println("***updateHaveOrderAndVolume:repeat->" + e.getMessage());
                     e.printStackTrace();
                 }
                 //获取收盘价，根据K线图
-                marketMap = getMarketPriceListByKLine(contractService, CONTRACTCODE, dto.getPeriodTime(), 50);
+                marketMap = getMarketPriceListByKLine(contractService, request.getContractCode(), dto.getPeriodTime(), 2 * dto.getLongLineCycle());
                 dto = updateMarketPriceByResult(dto, marketMap);
 
                 //获取BOLL指标
@@ -93,7 +72,7 @@ public class MasterMain {
                 getOrderByParams(request, dto, difArr, deaArr, macdArr, bollArr);
                 //合约下单
                 if (dto.getCurrentTakeOrder()) {
-                    takeOrder(CONTRACTCODE, contractService, request.getVolume(), request.getDirection(),
+                    takeOrder(request.getContractCode(), contractService, request.getVolume(), request.getDirection(),
                             request.getOffset(), request.getLeverRate(), request.getOrderPriceType());
                 }
                 //收尾
@@ -102,9 +81,48 @@ public class MasterMain {
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println("***" + getTimeFormat(System.currentTimeMillis()) + "-e.getMessage=" + e.getMessage());
-                //如报错等待60秒
-                Thread.sleep(60000);
+                //8小时结算，如报错等待60秒
+                Thread.sleep(60 * 1000);
             }
+        }
+    }
+
+    private static void validParams(ContractUniversalRequest request, ContractParmaDto dto) {
+        String bname = System.getProperty("bname");
+        Integer beishu = Integer.valueOf(System.getProperty("beishu"));
+        String kLineCycle = System.getProperty("kLineCycle");
+        Integer longLineCycle = Integer.valueOf(System.getProperty("longLineCycle"));
+        Integer shortLineCycle = Integer.valueOf(System.getProperty("shortLineCycle"));
+        //校验入参格式:币种名称，默认BTC-USD
+        if (Objects.nonNull(bname)) {
+            request.setContractCode(bname);
+        } else {
+            request.setContractCode("BTC-USD");
+        }
+        //校验入参格式，并赋值(默认20X)
+        if (Objects.nonNull(beishu)) {
+            request.setLeverRate(beishu);
+        } else {
+            request.setLeverRate(20);
+        }
+        //校验入参:K线周期,默认15分钟
+        if (Objects.nonNull(kLineCycle)
+        ) {
+            dto.setPeriodTime(kLineCycle);
+        } else {
+            dto.setPeriodTime("15min");
+        }
+        //校验入参:长k线次数，默认30
+        if (Objects.nonNull(longLineCycle)) {
+            dto.setLongLineCycle(longLineCycle);
+        } else {
+            dto.setLongLineCycle(30);
+        }
+        //校验入参：短k线次数，默认5
+        if (Objects.nonNull(shortLineCycle)) {
+            dto.setShortLineCycle(shortLineCycle);
+        } else {
+            dto.setShortLineCycle(5);
         }
     }
 
@@ -117,10 +135,10 @@ public class MasterMain {
         dto.setHighList(highList);
         dto.setLowList(lowList);
 
-        dto.setHigh5Price(highList.subList(highList.size() - 5, highList.size()).stream().filter(Objects::nonNull).max(Comparator.comparingDouble(price -> price)).get());
-        dto.setLow5Price(lowList.subList(lowList.size() - 5, lowList.size()).stream().filter(Objects::nonNull).min(Comparator.comparingDouble(price -> price)).get());
-        dto.setHigh30Price(highList.subList(highList.size() - 30, highList.size()).stream().filter(Objects::nonNull).max(Comparator.comparingDouble(price -> price)).get());
-        dto.setLow30Price(lowList.subList(lowList.size() - 30, lowList.size()).stream().filter(Objects::nonNull).min(Comparator.comparingDouble(price -> price)).get());
+        dto.setHigh5Price(highList.subList(highList.size() - dto.getShortLineCycle(), highList.size()).stream().filter(Objects::nonNull).max(Comparator.comparingDouble(price -> price)).get());
+        dto.setLow5Price(lowList.subList(lowList.size() - dto.getShortLineCycle(), lowList.size()).stream().filter(Objects::nonNull).min(Comparator.comparingDouble(price -> price)).get());
+        dto.setHigh30Price(highList.subList(highList.size() - dto.getLongLineCycle(), highList.size()).stream().filter(Objects::nonNull).max(Comparator.comparingDouble(price -> price)).get());
+        dto.setLow30Price(lowList.subList(lowList.size() - dto.getLongLineCycle(), lowList.size()).stream().filter(Objects::nonNull).min(Comparator.comparingDouble(price -> price)).get());
         dto.setCurrentClosePrice(closeList.get(closeList.size() - 1));
 
         dto.setCurrentClosePrice(closeList.get(closeList.size() - 1));
