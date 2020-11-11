@@ -31,7 +31,7 @@ public class MasterMain {
         request.setOffset("open");
         request.setOrderPriceType("optimal_20");
         //args[]参数校验并为request,dto赋值
-        validParams(request, dto);
+        validParams(args, request, dto);
 
         //获取合约客户端
         ContractClient contractService = ContractClient.create(HuobiOptions.builder()
@@ -87,12 +87,12 @@ public class MasterMain {
         }
     }
 
-    private static void validParams(ContractUniversalRequest request, ContractParmaDto dto) {
-        String bname = System.getProperty("bname");
-        Integer beishu = Integer.valueOf(System.getProperty("beishu"));
-        String kLineCycle = System.getProperty("kLineCycle");
-        Integer longLineCycle = Integer.valueOf(System.getProperty("longLineCycle"));
-        Integer shortLineCycle = Integer.valueOf(System.getProperty("shortLineCycle"));
+    private static void validParams(String[] args, ContractUniversalRequest request, ContractParmaDto dto) {
+        String bname = args[0];
+        Integer beishu = Integer.valueOf(args[1]);
+        String kLineCycle = args[2];
+        Integer longLineCycle = Integer.valueOf(args[3]);
+        Integer shortLineCycle = Integer.valueOf(args[4]);
         //校验入参格式:币种名称，默认BTC-USD
         if (Objects.nonNull(bname)) {
             request.setContractCode(bname);
@@ -273,6 +273,13 @@ public class MasterMain {
             request.setVolume(contractPosition.getVolume().longValue());
             System.out.println(">" + contractPosition.getVolume().doubleValue() + "，" + contractPosition.getDirection());
         } else {
+            //BTC合约面值为100U,其它合约面值为10U
+            int contractFaceValue;
+            if ("BTC-USD".equals(CONTRACTCODE)) {
+                contractFaceValue = 100;
+            } else {
+                contractFaceValue = 10;
+            }
             dto.setHaveOrder(false);
             dto.setHavaOrderDirection(null);
             //无持仓，获取账户余额，计算开仓张数（当前杠杆下满仓）
@@ -282,7 +289,7 @@ public class MasterMain {
             request.setVolume(contractAccount.getMargin_available()
                     .multiply(new BigDecimal(closeList.get(closeList.size() - 1)))
                     .multiply(new BigDecimal(request.getLeverRate()))
-                    .divide(new BigDecimal(100)).longValue() - 1);
+                    .divide(new BigDecimal(contractFaceValue)).longValue() - 1);
             System.out.println(">无持仓!可开：" + request.getVolume() + "张," + request.getLeverRate());
         }
     }
