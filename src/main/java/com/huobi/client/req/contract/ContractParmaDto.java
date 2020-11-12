@@ -2,6 +2,7 @@ package com.huobi.client.req.contract;
 
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Data
@@ -12,6 +13,8 @@ public class ContractParmaDto {
     private List<Double> highList;
     private List<Double> lowList;
 
+    //主程序循环时间
+    private Long sleepMillis;
     //当前KLine周期
     private String periodTime;
     // 自定义-判断是否持仓（有持仓则不开仓）
@@ -48,4 +51,8 @@ public class ContractParmaDto {
     private Integer longLineCycle;
     //kline短周期定义
     private Integer shortLineCycle;
+    //当前实时价格(用于实时查询价格)
+    private BigDecimal currRealPrice;
+    //上次实时价格(用于实时查询价格)
+    private BigDecimal lastRealPrice;
 }
