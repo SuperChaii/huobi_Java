@@ -50,7 +50,7 @@ public class MasterMain {
                     e.printStackTrace();
                 }
                 //获取收盘价，根据K线图
-                marketMap = getMarketPriceListByKLine(contractService, request.getContractCode(), dto.getPeriodTime(), 2 * dto.getLongLineCycle());
+                marketMap = getMarketPriceListByKLine(contractService, request.getContractCode(), dto.getPeriodTime(), dto.getLongLineCycle() + 50);
                 dto = updateMarketPriceByResult(dto, marketMap);
 
                 //获取BOLL指标
