@@ -18,6 +18,7 @@ public class CoreMethods {
         String kLineCycle = args[2];
         Integer longLineCycle = Integer.valueOf(args[3]);
         Integer shortLineCycle = Integer.valueOf(args[4]);
+        String trendType = args[5];
         //校验入参格式:币种名称，默认BTC-USD
         if (Objects.nonNull(bname)) {
             request.setContractCode(bname);
@@ -48,6 +49,11 @@ public class CoreMethods {
             dto.setShortLineCycle(shortLineCycle);
         } else {
             dto.setShortLineCycle(5);
+        }
+        if (Objects.nonNull(trendType) && "1".equals(trendType)) {
+            dto.setTrendType(true);
+        } else {
+            dto.setTrendType(false);
         }
     }
 
@@ -111,7 +117,7 @@ public class CoreMethods {
     protected static void getMarketPriceListByKLine(ContractClient contractService, String
             contractCode, ContractParmaDto dto) throws InterruptedException {
         List<ContractKline> contractAccountList;
-
+        String currentTime = getTimeFormat(System.currentTimeMillis());
         while (true) {
             contractAccountList = contractService.getContractKline(ContractKlineRequest.builder()
                     .contractCode(contractCode)
@@ -123,8 +129,11 @@ public class CoreMethods {
             } else {
                 dto.setCurrRealPrice(contractAccountList.get(contractAccountList.size() - 1).getClose());
                 if (dto.getCurrRealPrice().compareTo(dto.getLastRealPrice()) != 0) {
-                    //System.out.println(">"+dto.getLastRealPrice()+"-->"+dto.getCurrRealPrice());
                     updatePriceByMarket(dto, contractAccountList);
+                    System.out.println(currentTime + ">"+dto.getTrendType()+">price【" + dto.getCurrRealPrice() +"】"+
+                            "high【" + dto.getHigh30Price() +"】"+
+                            "low【" + dto.getLow30Price()+"】"
+                    );
                     dto.setLastRealPrice(contractAccountList.get(contractAccountList.size() - 1).getClose());
                     break;
                 }

@@ -18,7 +18,7 @@ public class MasterMain {
         ContractParmaDto dto = new ContractParmaDto();
         QuantIndicators qiUtils = new QuantIndicators();
         IndicatrixImpl impl = new IndicatrixImpl();
-        dto.setSleepMillis(100L);
+        dto.setSleepMillis(500L);
         //args[]参数校验并为request,dto赋值
         validParams(args, request, dto);
 
@@ -70,10 +70,10 @@ public class MasterMain {
                     }
                     takeOrder(request.getContractCode(), contractService, request.getVolume(), request.getDirection(),
                             request.getOffset(), request.getLeverRate(), request.getOrderPriceType());
+                    Thread.sleep(dto.getSleepMillis());
                 }
                 //收尾
                 dto.setCurrentTakeOrder(false);
-                Thread.sleep(dto.getSleepMillis());
             } catch (Exception e) {
                 e.printStackTrace();
                 System.out.println("***" + getTimeFormat(System.currentTimeMillis()) + "-e.getMessage=" + e.getMessage());
