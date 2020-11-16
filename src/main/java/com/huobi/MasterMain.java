@@ -60,13 +60,10 @@ public class MasterMain {
                 //获取EMD指标
                 //double[] emaArr = qiUtils.ema(doubleArr, 21);
                 //获取MACD指标
-                Double[] macdArr = new Double[dto.getCloseList().size()];
-                Double[] deaArr = new Double[dto.getCloseList().size()];
-                Double[] difArr = new Double[dto.getCloseList().size()];
-                impl.MACD(dto.getCloseList().toArray(new Double[dto.getCloseList().size()]), 12, 26, 9, macdArr, deaArr, difArr);
+                impl.MACD(dto.getCloseList().toArray(new Double[dto.getCloseList().size()]), 12, 26, 9, dto);
 
                 //核心算法：根据macd & boll & KLine 指标判断是否下单
-                getOrderByParams(request, dto, difArr, deaArr, macdArr, bollArr);
+                getOrderByParams(request, dto, bollArr);
                 //合约下单
                 if (dto.getCurrentTakeOrder()) {
                     takeOrder(request.getContractCode(), contractService, request.getVolume(), request.getDirection(),

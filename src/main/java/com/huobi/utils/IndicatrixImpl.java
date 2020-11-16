@@ -1,12 +1,14 @@
 package com.huobi.utils;
 
+import com.huobi.client.req.contract.ContractParmaDto;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 public class IndicatrixImpl implements Indicatrix{
     @Override
-    public void MACD(Double[] closePrice, Integer fast, Integer slow, Integer signal, Double[] macd, Double[] dea, Double[] diff) {
+    public void MACD(Double[] closePrice, Integer fast, Integer slow, Integer signal, ContractParmaDto dto) {
         double preEma_12 = 0;
         double preEma_26 = 0;
         double preDEA = 0;
@@ -21,6 +23,9 @@ public class IndicatrixImpl implements Indicatrix{
         double DEA = 0;
         double DIFF = 0;
         double MACD = 0;
+        Double[] macdArr = new Double[dto.getCloseList().size()];
+        Double[] difArr = new Double[dto.getCloseList().size()];
+        Double[] deaArr = new Double[dto.getCloseList().size()];
         for (int i = 0; i < closePrice.length; i++) {
             ema_12 = i == 0 ? closePrice[i]
                     : MathCaclateUtil.add(
@@ -61,10 +66,13 @@ public class IndicatrixImpl implements Indicatrix{
             preEma_26 = ema_26;
             preDEA = DEA;
 
-            macd[i] = MACD;
-            dea[i] = DEA;
-            diff[i] = DIFF;
+            macdArr[i] = MACD;
+            difArr[i] = DIFF;
+            deaArr[i] = DEA;
         }
+        dto.setMacdArr(macdArr);
+        dto.setDifArr(difArr);
+        dto.setDeaArr(deaArr);
     }
 
     @Override

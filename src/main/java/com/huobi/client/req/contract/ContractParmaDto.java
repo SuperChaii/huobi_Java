@@ -55,4 +55,9 @@ public class ContractParmaDto {
     private BigDecimal currRealPrice;
     //上次实时价格(用于实时查询价格)
     private BigDecimal lastRealPrice;
+    //以下为macd指标
+    private Double[] difArr;
+    private Double[] deaArr;
+    private Double[] macdArr;
+
 }

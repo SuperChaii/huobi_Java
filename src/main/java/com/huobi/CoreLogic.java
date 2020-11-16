@@ -12,19 +12,22 @@ import java.util.Objects;
 import static com.huobi.CoreMethods.*;
 
 public class CoreLogic {
-    protected static void getOrderByParams(ContractUniversalRequest request, ContractParmaDto dto, Double[] difArr, Double[] deaArr, Double[] macdArr, double[][] bollArr) {
+    protected static void getOrderByParams(ContractUniversalRequest request, ContractParmaDto dto, double[][] bollArr) {
         double upBoll = bollArr[0][bollArr[0].length - 1];
         double midBoll = bollArr[1][bollArr[1].length - 1];
         double lowBoll = bollArr[2][bollArr[2].length - 1];
         Double currentHighPrice = dto.getCurrentHighPrice();
+        Double lastHighPrice = dto.getLastHighPrice();
         Double currentLowPrice = dto.getCurrentLowPrice();
+        Double lastLowPrice = dto.getLastLowPrice();
         Double currentPrice = dto.getCurrentClosePrice();
-        Double currMacd = macdArr[macdArr.length-1];
-        Double lastMacd = macdArr[macdArr.length-2];
-        Double currDif = difArr[difArr.length-1];
-        Double lastDIf = difArr[difArr.length-2];
-        Double currDea = deaArr[deaArr.length-1];
-        Double lastDea = deaArr[deaArr.length-2];
+
+        Double currMacd = dto.getMacdArr()[dto.getMacdArr().length - 1];
+        Double lastMacd = dto.getMacdArr()[dto.getMacdArr().length - 2];
+        Double currDif = dto.getDifArr()[dto.getDifArr().length - 1];
+        Double lastDIf = dto.getDifArr()[dto.getDifArr().length - 2];
+        Double currDea = dto.getDeaArr()[dto.getDeaArr().length - 1];
+        Double lastDea = dto.getDeaArr()[dto.getDeaArr().length - 2];
         String currentTime = getTimeFormat(System.currentTimeMillis());
 
         //默认为吃单开仓（对手价20）
@@ -102,9 +105,12 @@ public class CoreLogic {
             } else {
                 //波段行情 -> 止盈:突破upboll后回落或突破upboll后跌破5日k低价，止损：跌破30日k最低价
                 if ("buy".equals(dto.getHavaOrderDirection())
-                        && (currentHighPrice >= upBoll || currentPrice <= dto.getLow30Price())
+                        && (currentHighPrice >= upBoll
+                        || lastHighPrice >= upBoll
+                        || currentPrice <= dto.getLow30Price())
                 ) {
-                    if (currentPrice <= upBoll || currentPrice <= dto.getLow5Price()) {
+                    if ((currentPrice <= upBoll || currentPrice <= dto.getLow5Price())
+                            && currMacd < lastMacd) {
                         request.setOffset("close");
                         request.setDirection("sell");
                         dto.setCurrentTakeOrder(true);
@@ -113,9 +119,12 @@ public class CoreLogic {
                                 + (currentHighPrice >= upBoll) + "||" + (currentPrice <= dto.getLow30Price()) + ";" + (currentPrice <= upBoll) + "||" + (currentPrice <= dto.getLow5Price()));
                     }
                 } else if ("sell".equals(dto.getHavaOrderDirection())
-                        && (currentLowPrice <= lowBoll || currentPrice >= dto.getHigh30Price())
+                        && (currentLowPrice <= lowBoll
+                        || lastLowPrice <= lowBoll
+                        || currentPrice >= dto.getHigh30Price())
                 ) {
-                    if (currentPrice >= lowBoll || currentPrice >= dto.getHigh5Price()) {
+                    if ((currentPrice >= lowBoll || currentPrice >= dto.getHigh5Price())
+                            && currMacd > lastMacd) {
                         //波段行情 -> 止盈:跌破lowBoll，止损：突破5k最高价
                         request.setOffset("close");
                         request.setDirection("buy");

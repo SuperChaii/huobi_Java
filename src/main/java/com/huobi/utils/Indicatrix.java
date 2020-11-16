@@ -1,5 +1,7 @@
 package com.huobi.utils;
 
+import com.huobi.client.req.contract.ContractParmaDto;
+
 public interface Indicatrix {
 
     /**
@@ -16,7 +18,7 @@ public interface Indicatrix {
      * @param diff--顺序记录diff指标
      *            new double[]
      */
-    void MACD(Double[] closePrice, Integer fast, Integer slow, Integer signal, Double[] macd, Double[] dea, Double[] diff);
+    void MACD(Double[] closePrice, Integer fast, Integer slow, Integer signal, ContractParmaDto dto);
 
     /**
      * 计算KDJ指标数据
