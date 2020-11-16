@@ -130,7 +130,7 @@ public class CoreMethods {
                 dto.setCurrRealPrice(contractAccountList.get(contractAccountList.size() - 1).getClose());
                 if (dto.getCurrRealPrice().compareTo(dto.getLastRealPrice()) != 0) {
                     updatePriceByMarket(dto, contractAccountList);
-                    System.out.println(currentTime + ">"+dto.getTrendType()+">price【" + dto.getCurrRealPrice() +"】"+
+                    System.out.println(currentTime + ">"+dto.getHavaOrderDirection() +"-"+ dto.getTrendType()+">price【" + dto.getCurrRealPrice() +"】"+
                             "high【" + dto.getHigh30Price() +"】"+
                             "low【" + dto.getLow30Price()+"】"
                     );

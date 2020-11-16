@@ -19,7 +19,14 @@ public class CoreLogic {
         Double currentHighPrice = dto.getCurrentHighPrice();
         Double currentLowPrice = dto.getCurrentLowPrice();
         Double currentPrice = dto.getCurrentClosePrice();
+        Double currMacd = macdArr[macdArr.length-1];
+        Double lastMacd = macdArr[macdArr.length-2];
+        Double currDif = difArr[difArr.length-1];
+        Double lastDIf = difArr[difArr.length-2];
+        Double currDea = deaArr[deaArr.length-1];
+        Double lastDea = deaArr[deaArr.length-2];
         String currentTime = getTimeFormat(System.currentTimeMillis());
+
         //默认为吃单开仓（对手价20）
         request.setOrderPriceType("optimal_20");
         //***开仓逻辑***
@@ -30,16 +37,18 @@ public class CoreLogic {
                     || dto.getCurrentLowPrice() <= dto.getLow30Price()
                     || dto.getLastLowPrice() <= dto.getLow30Price()
             ) {
-                //趋势行情
-                dto.setTrendType(true);
-                //当价格突破highPrice 做多 / 突破lowPrice做空
-                if (currentPrice > upBoll) {
+                //当价格突破highPrice 做多 / 突破lowPrice做空,且做多时DIF大于DEA线，做空时同理
+                if (currentPrice > upBoll && currDif > currDea) {
+                    //趋势行情
+                    dto.setTrendType(true);
                     request.setOffset("open");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
                     System.out.println("***" + currentTime + "当前为【趋势】行情（高买低卖），突破上轨道，已【开多】仓" + request.getVolume() + "张！！" +
                             "currentPrice > upBoll：" + currentPrice + ">" + upBoll);
-                } else if (currentPrice < lowBoll) {
+                } else if (currentPrice < lowBoll && currDif < currDea) {
+                    //趋势行情
+                    dto.setTrendType(true);
                     request.setOffset("open");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
@@ -49,14 +58,14 @@ public class CoreLogic {
             } else {
                 //波段行情
                 dto.setTrendType(false);
-                //当highPrice突破后会回落 做空 / 当lowPrice跌破反弹时 做多
-                if (currentHighPrice > upBoll && currentPrice < upBoll) {
+                //当highPrice突破后会回落 做空 / 当lowPrice跌破反弹时 做多 ，且当前MACD柱小于前一次MACD柱做空，做多同理
+                if (currentHighPrice > upBoll && currentPrice < upBoll && currMacd < lastMacd) {
                     request.setOffset("open");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
                     System.out.println("***" + currentTime + "当前为【波段】行情(低买高卖)，突破上轨，已【开空】仓" + request.getVolume() + "张！！" +
                             "currentPrice > upBoll:" + currentPrice + ">" + upBoll);
-                } else if (currentLowPrice < lowBoll && currentPrice > lowBoll) {
+                } else if (currentLowPrice < lowBoll && currentPrice > lowBoll && currMacd > lastMacd) {
                     request.setOffset("open");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);

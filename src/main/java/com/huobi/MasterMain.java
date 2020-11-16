@@ -41,6 +41,15 @@ public class MasterMain {
             try {
                 //获取收盘价，根据K线图
                 getMarketPriceListByKLine(contractService, request.getContractCode(), dto);
+                try {
+                    //下单前更新持仓情况及最大下单量
+                    updateHaveOrderAndVolume(request.getContractCode(), request, dto, contractService);
+                } catch (Exception e) {
+                    Thread.sleep(dto.getSleepMillis());
+                    updateHaveOrderAndVolume(request.getContractCode(), request, dto, contractService);
+                    System.out.println("***updateHaveOrderAndVolume:repeat->" + e.getMessage());
+                    e.printStackTrace();
+                }
                 //获取BOLL指标
                 Double[] closePrice = dto.getCloseList().toArray(new Double[dto.getCloseList().size()]);
                 double[] doubleArr = new double[closePrice.length];
@@ -56,25 +65,20 @@ public class MasterMain {
                 Double[] difArr = new Double[dto.getCloseList().size()];
                 impl.MACD(dto.getCloseList().toArray(new Double[dto.getCloseList().size()]), 12, 26, 9, macdArr, deaArr, difArr);
 
-                //根据macd & boll & KLine 指标判断是否下单
+                //核心算法：根据macd & boll & KLine 指标判断是否下单
                 getOrderByParams(request, dto, difArr, deaArr, macdArr, bollArr);
                 //合约下单
                 if (dto.getCurrentTakeOrder()) {
-                    try {
-                        //下单前更新持仓情况及最大下单量
-                        updateHaveOrderAndVolume(request.getContractCode(), request, dto, contractService);
-                    } catch (Exception e) {
-                        updateHaveOrderAndVolume(request.getContractCode(), request, dto, contractService);
-                        System.out.println("***updateHaveOrderAndVolume:repeat->" + e.getMessage());
-                        e.printStackTrace();
-                    }
                     takeOrder(request.getContractCode(), contractService, request.getVolume(), request.getDirection(),
                             request.getOffset(), request.getLeverRate(), request.getOrderPriceType());
                     Thread.sleep(dto.getSleepMillis());
                 }
-                //收尾
+                //重置做单标识，一定要执行否则循环下单导致空指针！
                 dto.setCurrentTakeOrder(false);
+                Thread.sleep(dto.getSleepMillis());
             } catch (Exception e) {
+                //重置标识，一定要执行否则循环下单导致空指针！
+                dto.setCurrentTakeOrder(false);
                 e.printStackTrace();
                 System.out.println("***" + getTimeFormat(System.currentTimeMillis()) + "-e.getMessage=" + e.getMessage());
                 //8小时结算，如报错等待60秒
