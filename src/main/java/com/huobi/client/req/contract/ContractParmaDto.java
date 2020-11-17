@@ -59,5 +59,9 @@ public class ContractParmaDto {
     private Double[] difArr;
     private Double[] deaArr;
     private Double[] macdArr;
+    //波段止损点（upBoll差值）
+    private Double upStopLossPoint;
+    //波段止损点（lowBoll差值）
+    private Double lowStopLossPoint;
 
 }

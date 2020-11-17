@@ -13,9 +13,9 @@ import static com.huobi.CoreMethods.*;
 
 public class CoreLogic {
     protected static void getOrderByParams(ContractUniversalRequest request, ContractParmaDto dto, double[][] bollArr) {
-        double upBoll = bollArr[0][bollArr[0].length - 1];
-        double midBoll = bollArr[1][bollArr[1].length - 1];
-        double lowBoll = bollArr[2][bollArr[2].length - 1];
+        Double upBoll = bollArr[0][bollArr[0].length - 1];
+        Double midBoll = bollArr[1][bollArr[1].length - 1];
+        Double lowBoll = bollArr[2][bollArr[2].length - 1];
         Double currentHighPrice = dto.getCurrentHighPrice();
         Double lastHighPrice = dto.getLastHighPrice();
         Double currentLowPrice = dto.getCurrentLowPrice();
@@ -29,6 +29,13 @@ public class CoreLogic {
         Double currDea = dto.getDeaArr()[dto.getDeaArr().length - 1];
         Double lastDea = dto.getDeaArr()[dto.getDeaArr().length - 2];
         String currentTime = getTimeFormat(System.currentTimeMillis());
+        //为止损点赋默认值
+        if (Objects.isNull(dto.getUpStopLossPoint())) {
+            dto.setUpStopLossPoint(upBoll * 2 + midBoll);
+        }
+        if (Objects.isNull(dto.getLowStopLossPoint())) {
+            dto.setLowStopLossPoint(lowBoll * 2 - midBoll);
+        }
 
         //默认为吃单开仓（对手价20）
         request.setOrderPriceType("optimal_20");
@@ -66,19 +73,25 @@ public class CoreLogic {
                     request.setOffset("open");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
+                    dto.setUpStopLossPoint(upBoll * 2 + midBoll);
+                    dto.setLowStopLossPoint(lowBoll * 2 - midBoll);
                     System.out.println("***" + currentTime + "当前为【波段】行情(低买高卖)，突破上轨，已【开空】仓" + request.getVolume() + "张！！" +
-                            "currentPrice > upBoll:" + currentPrice + ">" + upBoll);
+                            "currentPrice > upBoll:" + currentPrice + ">" + upBoll
+                            + "止盈&止损点为>" + dto.getUpStopLossPoint() + "&" + dto.getLowStopLossPoint());
                 } else if (currentLowPrice < lowBoll && currentPrice > lowBoll && currMacd > lastMacd) {
                     request.setOffset("open");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
+                    dto.setUpStopLossPoint(upBoll * 2 + midBoll);
+                    dto.setLowStopLossPoint(lowBoll * 2 - midBoll);
                     System.out.println("***" + currentTime + "当前为【波段】行情(低买高卖)，跌破下轨，已【开多】仓" + request.getVolume() + "张！！" +
-                            "currentPrice < lowBoll:" + currentPrice + "<" + lowBoll);
+                            "currentPrice < lowBoll:" + currentPrice + "<" + lowBoll
+                            + "止盈&止损点为>" + dto.getUpStopLossPoint() + "&" + dto.getLowStopLossPoint());
                 }
             }
         } else {
             //***平仓逻辑***
-            //趋势行情：当跌/突破5日k线平仓
+            //**趋势行情**：
             if (Objects.nonNull(dto.getTrendType()) && dto.getTrendType()) {
                 //趋势无止盈，只有止损:当跌破5日k线最低价 / 跌破midBoll价格平仓
                 if ("buy".equals(dto.getHavaOrderDirection())
@@ -103,11 +116,14 @@ public class CoreLogic {
                             + currentPrice + ">=" + dto.getHigh5Price() + "||" + currentPrice + ">=" + midBoll);
                 }
             } else {
-                //波段行情 -> 止盈:突破upboll后回落或突破upboll后跌破5日k低价，止损：跌破30日k最低价
+                //**波段行情**
+                // 止盈:突破upboll后回落或突破upboll后跌破5日k低价，
+                // 止损：跌破30日k最低价 | 跌破 lowStopLossPoint位置
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentHighPrice >= upBoll
                         || lastHighPrice >= upBoll
                         || currentPrice <= dto.getLow30Price())
+                        || currentPrice <= dto.getLowStopLossPoint()
                 ) {
                     if ((currentPrice <= upBoll || currentPrice <= dto.getLow5Price())
                             && currMacd < lastMacd) {
@@ -117,6 +133,14 @@ public class CoreLogic {
                         System.out.println("***" + currentTime + "当前为【波段】行情做多 -> 已【平多】仓" + request.getVolume() + "张！！" +
                                 "【currentHighPrice >= upBoll || currentPrice <= dto.getLow30Price()】 ; 【currentPrice <= upBoll || currentPrice <= dto.getLow5Price()】 "
                                 + (currentHighPrice >= upBoll) + "||" + (currentPrice <= dto.getLow30Price()) + ";" + (currentPrice <= upBoll) + "||" + (currentPrice <= dto.getLow5Price()));
+                    } else if (currentPrice <= dto.getLowStopLossPoint()) {
+                        //止损：lowBoll * 2 - midBoll
+                        request.setOffset("close");
+                        request.setDirection("sell");
+                        dto.setCurrentTakeOrder(true);
+                        System.out.println("***" + currentTime + "当前为【波段】行情做多 -> 已止损【平多】仓，" + request.getVolume() + "张！！" +
+                                "【currentPrice <= dto.getLowStopLossPoint()】"
+                                + currentPrice + "<=" + dto.getLowStopLossPoint());
                     }
                 } else if ("sell".equals(dto.getHavaOrderDirection())
                         && (currentLowPrice <= lowBoll
@@ -132,6 +156,15 @@ public class CoreLogic {
                         System.out.println("***" + currentTime + "当前为【波段】行情做空 ->已【平空】仓" + request.getVolume() + "张！！" +
                                 "currentLowPrice <= lowBoll ; currentPrice >= dto.getHigh30Price() ; currentPrice >= lowBoll ; currentPrice >= dto.getHigh5Price()) || "
                                 + (currentLowPrice <= lowBoll) + ";" + (currentPrice >= dto.getHigh30Price()) + (currentPrice >= lowBoll) + ";" + (currentPrice >= dto.getHigh5Price()) + ";");
+                    } else if (currentPrice >= dto.getUpStopLossPoint()) {
+                        //止损：upBoll * 2 + midBoll
+                        request.setOffset("close");
+                        request.setDirection("buy");
+                        dto.setCurrentTakeOrder(true);
+                        System.out.println("***" + currentTime + "当前为【波段】行情做空 ->已止损【平空】仓" + request.getVolume() + "张！！" +
+                                "【currentPrice >= dto.getUpStopLossPoint()】"
+                                + currentPrice + ">=" + dto.getUpStopLossPoint());
+
                     }
                 }
             }
