@@ -7,7 +7,7 @@ public class Constants {
   //public static final String SECRET_KEY = "9e1c6edb-b1c7223c-a7d2c830-8d82b";
 
   //读写
-  public static final String API_KEY = "1qdmpe4rty-55ec5a7a-bc4a694d-2d046";
-  public static final String SECRET_KEY = "3896f733-a34313a1-75a32c5a-c60ae";
+  public static final String API_KEY = "b1f46f92-3a00d385-hrf5gdfghe-975bd";
+  public static final String SECRET_KEY = "a95cd714-b7e49a2e-46193a62-309ec";
 
 }
