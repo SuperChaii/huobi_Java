@@ -69,7 +69,8 @@ public class CoreLogic {
                 //波段行情
                 dto.setTrendType(false);
                 //当highPrice突破后会回落 做空 / 当lowPrice跌破反弹时 做多 ，且当前MACD柱小于前一次MACD柱做空，做多同理
-                if (currentHighPrice > upBoll && currentPrice < upBoll && currMacd < lastMacd) {
+                if ((currentHighPrice > upBoll || lastHighPrice > upBoll)
+                        && currentPrice < upBoll && currMacd < lastMacd) {
                     request.setOffset("open");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
@@ -78,7 +79,8 @@ public class CoreLogic {
                     System.out.println("***" + currentTime + "当前为【波段】行情(低买高卖)，突破上轨，已【开空】仓" + request.getVolume() + "张！！" +
                             "currentPrice > upBoll:" + currentPrice + ">" + upBoll
                             + "止盈&止损点为>" + dto.getUpStopLossPoint() + "&" + dto.getLowStopLossPoint());
-                } else if (currentLowPrice < lowBoll && currentPrice > lowBoll && currMacd > lastMacd) {
+                } else if ((currentLowPrice < lowBoll || lastLowPrice < lowBoll)
+                        && currentPrice > lowBoll && currMacd > lastMacd) {
                     request.setOffset("open");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
