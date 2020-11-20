@@ -8,6 +8,7 @@ import com.huobi.model.contract.ContractAccount;
 import com.huobi.model.contract.ContractKline;
 import com.huobi.model.contract.ContractPosition;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -118,6 +119,7 @@ public class CoreMethods {
             contractCode, ContractParmaDto dto) throws InterruptedException {
         List<ContractKline> contractAccountList;
         String currentTime = getTimeFormat(System.currentTimeMillis());
+        DecimalFormat df = new DecimalFormat("#.00");
         while (true) {
             contractAccountList = contractService.getContractKline(ContractKlineRequest.builder()
                     .contractCode(contractCode)
@@ -131,17 +133,17 @@ public class CoreMethods {
                 if (dto.getCurrRealPrice().compareTo(dto.getLastRealPrice()) != 0) {
                     updatePriceByMarket(dto, contractAccountList);
                     System.out.println(currentTime + ">" +
-                            "order【" + dto.getHaveOrder() + "】" +
-                            "orderDir【" + dto.getHavaOrderDirection() + "】" +
-                            "volume【" + dto.getVolume() + "】" +
-                            "trend【" + dto.getTrendType() + "】" +
-                            "price【" + dto.getCurrRealPrice() + "】" +
-                            "30high【" + dto.getHigh30Price() + "】" +
-                            "30low【" + dto.getLow30Price() + "】" +
-                            "5high【" + dto.getLow5Price() + "】" +
-                            "5low【" + dto.getLow5Price() + "】" +
-                            "uplp【" + dto.getUpStopLossPoint() + "】" +
-                            "lowlp【" + dto.getLowStopLossPoint() + "】"
+                            "hv【" + dto.getHaveOrder() + "】" +
+                            "hod【" + dto.getHavaOrderDirection() + "】" +
+                            "tr【" + dto.getTrendType() + "】" +
+                            "vo【" + dto.getVolume() + "】" +
+                            "pr【" + dto.getCurrRealPrice() + "】" +
+                            "30h【" + dto.getHigh30Price() + "】" +
+                            "30l【" + dto.getLow30Price() + "】" +
+                            "5h【" + dto.getHigh5Price() + "】" +
+                            "5l【" + dto.getLow5Price() + "】" +
+                            "uplp【" + df.format(dto.getUpStopLossPoint() != null ? dto.getUpStopLossPoint() : 0) + "】" +
+                            "lowlp【" + df.format(dto.getLowStopLossPoint() != null ? dto.getLowStopLossPoint() : 0) + "】"
                     );
                     dto.setLastRealPrice(contractAccountList.get(contractAccountList.size() - 1).getClose());
                     break;

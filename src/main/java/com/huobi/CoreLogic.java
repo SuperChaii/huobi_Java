@@ -29,13 +29,6 @@ public class CoreLogic {
         Double currDea = dto.getDeaArr()[dto.getDeaArr().length - 1];
         Double lastDea = dto.getDeaArr()[dto.getDeaArr().length - 2];
         String currentTime = getTimeFormat(System.currentTimeMillis());
-        //为止损点赋默认值
-        if (Objects.isNull(dto.getUpStopLossPoint())) {
-            dto.setUpStopLossPoint(upBoll * 2 + midBoll);
-        }
-        if (Objects.isNull(dto.getLowStopLossPoint())) {
-            dto.setLowStopLossPoint(lowBoll * 2 - midBoll);
-        }
 
         //默认为吃单开仓（对手价20）
         request.setOrderPriceType("optimal_20");
@@ -48,7 +41,6 @@ public class CoreLogic {
                     || dto.getLastLowPrice() <= dto.getLow30Price()
             ) {
                 //当价格突破highPrice 做多 / 突破lowPrice做空,且做多时DIF大于DEA线，做空时同理
-                //TODO 趋势增加止损点
                 if (currentPrice > upBoll && currDif > currDea) {
                     //趋势行情
                     dto.setTrendType(true);
@@ -100,6 +92,13 @@ public class CoreLogic {
             //***平仓逻辑***
             //**趋势行情**：
             if (Objects.nonNull(dto.getTrendType()) && dto.getTrendType()) {
+                //为止损点赋默认值
+                if(Objects.isNull(dto.getUpStopLossPoint())){
+                    dto.setUpStopLossPoint(upBoll - (upBoll - midBoll) / 2);
+                }
+                if(Objects.isNull(dto.getLowStopLossPoint())){
+                    dto.setLowStopLossPoint(lowBoll + (midBoll - lowBoll) / 2);
+                }
                 //趋势无止盈只有止损: 跌破5日k线最低价 / 跌破midBoll价格/ 跌破止损点 > upBoll - (upBoll - midBoll) / 2
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentPrice <= dto.getLow5Price()
@@ -126,6 +125,13 @@ public class CoreLogic {
                 //**波段行情**
                 // 止盈:突破upboll后回落或突破upboll后跌破5日k低价，
                 // 止损：跌破30日k最低价 | 跌破 lowStopLossPoint位置
+                // 为止损点赋默认值
+                if(Objects.isNull(dto.getUpStopLossPoint())){
+                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
+                }
+                if(Objects.isNull(dto.getLowStopLossPoint())){
+                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
+                }
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentHighPrice >= upBoll
                         || lastHighPrice >= upBoll
