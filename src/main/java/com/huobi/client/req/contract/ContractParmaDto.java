@@ -21,6 +21,8 @@ public class ContractParmaDto {
     private Boolean haveOrder;
     // 自定义-当前持仓方向 "open":开 "close":平
     private String havaOrderDirection;
+    // 自定义-当前持仓张数(只做日志输出，不做交易)
+    private Long volume;
     // 自定义-容错系数
     private Double dynamicNum;
     // 自定义-本次是否下单
