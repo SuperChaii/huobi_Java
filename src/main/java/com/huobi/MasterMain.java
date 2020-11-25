@@ -24,7 +24,8 @@ public class MasterMain {
 
         //获取合约客户端
         ContractClient contractService = ContractClient.create(HuobiOptions.builder()
-                .restHost("https://api.hbdm.com")
+                //.restHost("https://api.hbdm.com")
+                .restHost("https://api.hbdm.vn")
                 .apiKey(Constants.API_KEY)
                 .secretKey(Constants.SECRET_KEY)
                 .build());
