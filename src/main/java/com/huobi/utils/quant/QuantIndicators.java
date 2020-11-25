@@ -255,7 +255,7 @@ public class QuantIndicators {
     }
 
     public double[][] boll(double[] prices) {
-        return boll(prices, 20, 2, 2);
+        return boll(prices, 19, 2, 2);
     }
 
     /**

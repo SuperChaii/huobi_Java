@@ -99,10 +99,9 @@ public class CoreLogic {
                 if(Objects.isNull(dto.getLowStopLossPoint())){
                     dto.setLowStopLossPoint(lowBoll + (midBoll - lowBoll) / 2);
                 }
-                //趋势无止盈只有止损: 跌破5日k线最低价 / 跌破midBoll价格/ 跌破止损点 > upBoll - (upBoll - midBoll) / 2
+                //趋势无止盈只有止损: 跌破5日k线最低价 / 跌破止损点 > upBoll - (upBoll - midBoll) / 2
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentPrice <= dto.getLow5Price()
-                        || currentPrice <= midBoll
                         || currentPrice <= dto.getUpStopLossPoint())
                 ) {
                     //当趋势跌破5日k最低价时平仓
@@ -112,7 +111,6 @@ public class CoreLogic {
                     System.out.println("***" + currentTime + "当前为【趋势】行情做多，已【平多】仓" + request.getVolume() + "张！！");
                 } else if ("sell".equals(dto.getHavaOrderDirection())
                         && (currentPrice >= dto.getHigh5Price()
-                        || currentPrice >= midBoll
                         || currentPrice >= dto.getLowStopLossPoint())
                 ) {
                     //当趋势突破5日k最高价时平仓
