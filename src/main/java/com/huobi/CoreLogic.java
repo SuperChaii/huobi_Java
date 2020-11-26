@@ -132,7 +132,7 @@ public class CoreLogic {
             } else {
                 //***波段行情平仓***
                 // 止盈：突破upboll后回落或突破upboll后跌破5日k低价，
-                // 止损：再次跌破upboll后 || 跌破 lowStopLossPoint位置（已删除）
+                // 止损：再次跌破upboll后
                 // 为多头设平仓逻辑：止盈：突破boll回落 && 止损：跌破boll
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentHighPrice >= upBoll
