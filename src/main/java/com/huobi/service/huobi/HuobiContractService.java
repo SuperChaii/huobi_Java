@@ -50,6 +50,8 @@ public class HuobiContractService implements ContractClient {
                         .putToUrl("contract_code", request.getContractCode())
                         .putToUrl("period", request.getPeriod())
                         .putToUrl("size", request.getSize())
+                        .putToUrl("from", request.getFrom())
+                        .putToUrl("to", request.getTo())
         );
         String dataJson = json.get("data").toString();
         return JSON.parseArray(dataJson, ContractKline.class);

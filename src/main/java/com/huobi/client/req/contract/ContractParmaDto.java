@@ -12,6 +12,7 @@ public class ContractParmaDto {
     private List<Double> closeList;
     private List<Double> highList;
     private List<Double> lowList;
+    private List<Double> volumeList;
 
     //主程序循环时间
     private Long sleepMillis;
@@ -65,5 +66,11 @@ public class ContractParmaDto {
     private Double upStopLossPoint;
     //波段止损点（lowBoll差值）
     private Double lowStopLossPoint;
-
+    //K线回测起止时间(时间戳)
+    private Long startTime;
+    private Long endTime;
+    //OBV
+    private List<BigDecimal> obvList;
+    //Boll
+    private double[][] bollArr;
 }

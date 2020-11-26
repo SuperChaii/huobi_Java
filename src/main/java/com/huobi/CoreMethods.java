@@ -8,6 +8,7 @@ import com.huobi.model.contract.ContractAccount;
 import com.huobi.model.contract.ContractKline;
 import com.huobi.model.contract.ContractPosition;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -115,16 +116,19 @@ public class CoreMethods {
     }
 
 
-    protected static void getMarketPriceListByKLine(ContractClient contractService, String
+    protected static void getMarketInfoListByKLine(ContractClient contractService, String
             contractCode, ContractParmaDto dto) throws InterruptedException {
         List<ContractKline> contractAccountList;
         String currentTime = getTimeFormat(System.currentTimeMillis());
         DecimalFormat df = new DecimalFormat("#.00");
+        dto.setLastRealPrice(new BigDecimal(19306));
         while (true) {
             contractAccountList = contractService.getContractKline(ContractKlineRequest.builder()
                     .contractCode(contractCode)
                     .period(dto.getPeriodTime())
                     .size(dto.getLongLineCycle() + 50)
+                    .from(dto.getStartTime())
+                    .to(dto.getEndTime())
                     .build());
             if (Objects.isNull(dto.getLastRealPrice())) {
                 dto.setLastRealPrice(contractAccountList.get(contractAccountList.size() - 1).getClose());
@@ -157,6 +161,7 @@ public class CoreMethods {
         ArrayList<Double> closeList = new ArrayList<>();
         ArrayList<Double> highList = new ArrayList<>();
         ArrayList<Double> lowList = new ArrayList<>();
+        ArrayList<Double> volumeList = new ArrayList<>();
         //获取周期内收盘价
         contractAccountList.forEach(contract -> {
             closeList.add(contract.getClose().doubleValue());
@@ -169,15 +174,23 @@ public class CoreMethods {
         contractAccountList.forEach(contract -> {
             lowList.add(contract.getLow().doubleValue());
         });
+        contractAccountList.forEach(contract ->{
+            volumeList.add(contract.getVol().doubleValue());
+        });
 
         dto.setCloseList(closeList);
         dto.setHighList(highList);
         dto.setLowList(lowList);
+        dto.setVolumeList(volumeList);
 
-        dto.setHigh5Price(highList.subList(highList.size() - dto.getShortLineCycle(), highList.size()).stream().filter(Objects::nonNull).max(Comparator.comparingDouble(price -> price)).get());
-        dto.setLow5Price(lowList.subList(lowList.size() - dto.getShortLineCycle(), lowList.size()).stream().filter(Objects::nonNull).min(Comparator.comparingDouble(price -> price)).get());
-        dto.setHigh30Price(highList.subList(highList.size() - dto.getLongLineCycle(), highList.size()).stream().filter(Objects::nonNull).max(Comparator.comparingDouble(price -> price)).get());
-        dto.setLow30Price(lowList.subList(lowList.size() - dto.getLongLineCycle(), lowList.size()).stream().filter(Objects::nonNull).min(Comparator.comparingDouble(price -> price)).get());
+        dto.setHigh5Price(highList.subList(highList.size() - dto.getShortLineCycle(), highList.size())
+                .stream().filter(Objects::nonNull).max(Comparator.comparingDouble(price -> price)).get());
+        dto.setLow5Price(lowList.subList(lowList.size() - dto.getShortLineCycle(), lowList.size())
+                .stream().filter(Objects::nonNull).min(Comparator.comparingDouble(price -> price)).get());
+        dto.setHigh30Price(highList.subList(highList.size() - dto.getLongLineCycle(), highList.size())
+                .stream().filter(Objects::nonNull).max(Comparator.comparingDouble(price -> price)).get());
+        dto.setLow30Price(lowList.subList(lowList.size() - dto.getLongLineCycle(), lowList.size())
+                .stream().filter(Objects::nonNull).min(Comparator.comparingDouble(price -> price)).get());
         dto.setCurrentClosePrice(closeList.get(closeList.size() - 1));
 
         dto.setCurrentClosePrice(closeList.get(closeList.size() - 1));
@@ -186,5 +199,6 @@ public class CoreMethods {
         dto.setLastHighPrice(highList.get(highList.size() - 2));
         dto.setCurrentLowPrice(lowList.get(lowList.size() - 1));
         dto.setLastLowPrice(lowList.get(lowList.size() - 2));
+
     }
 }

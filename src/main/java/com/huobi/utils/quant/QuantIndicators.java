@@ -493,9 +493,9 @@ public class QuantIndicators {
         length.value = -1;
 
         retCode = core.obv(0, prices.length - 1, prices, volume, begin, length, output);
-        // public static RetCode Obv(int startIdx, int endIdx, double[] inReal,
-        // double[] inVolume, out int outBegIdx, out int outNBElement, double[]
-        // outReal);
+//         public static RetCode Obv(int startIdx, int endIdx, double[] inReal,
+//         double[] inVolume, out int outBegIdx, out int outNBElement, double[]
+//         outReal);
         return output;
 
     }

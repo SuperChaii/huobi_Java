@@ -13,10 +13,10 @@ public class ContractKlineRequest {
     //k线类型
     private String period;
     //K线数量
-    private int size;
+    private Integer size;
     //开始时间戳
-    private int from;
+    private Long from;
     //结束时间戳
-    private int to;
+    private Long to;
 
 }
