@@ -100,7 +100,7 @@ public class CoreLogic {
                 }
             }
         } else {
-            //***趋势行情-平仓***
+            //***趋势行情平仓***
             if (Objects.nonNull(dto.getTrendType()) && dto.getTrendType()) {
                 //为止损点赋默认值
                 if (Objects.isNull(dto.getUpStopLossPoint())) {
@@ -130,7 +130,7 @@ public class CoreLogic {
                     System.out.println("***" + currentTime + "当前为【趋势】行情做空，已【平空】仓" + request.getVolume() + "张！！");
                 }
             } else {
-                //***波段行情-平仓***
+                //***波段行情平仓***
                 // 止盈：突破upboll后回落或突破upboll后跌破5日k低价，
                 // 止损：再次跌破upboll后 || 跌破 lowStopLossPoint位置（已删除）
                 // 为多头设平仓逻辑：止盈：突破boll回落 && 止损：跌破boll
