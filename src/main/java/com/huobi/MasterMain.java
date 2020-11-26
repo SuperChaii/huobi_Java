@@ -58,7 +58,7 @@ public class MasterMain {
                 double[] closePriceArr = getArrayByList(dto.getCloseList());
                 dto.setBollArr(qiUtils.boll(closePriceArr));
                 //获取EMD指标
-                //double[] emaArr = qiUtils.ema(closePriceArr, 21);
+                //dto.setEmaArr(qiUtils.ema(closePriceArr, dto.getEmaValue()));
                 //获取OBV指标,并转BigDecimal
                 List<BigDecimal> obvList = new ArrayList<>();
                 double[] obvarr =qiUtils.obv(getArrayByList(dto.getCloseList()),getArrayByList(dto.getVolumeList()));

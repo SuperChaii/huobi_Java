@@ -21,6 +21,7 @@ public class CoreMethods {
         Integer longLineCycle = Integer.valueOf(args[3]);
         Integer shortLineCycle = Integer.valueOf(args[4]);
         String trendType = args[5];
+        Integer emaValue = Integer.valueOf(args[6]);
         //校验入参格式:币种名称，默认BTC-USD
         if (Objects.nonNull(bname)) {
             request.setContractCode(bname);
@@ -52,10 +53,17 @@ public class CoreMethods {
         } else {
             dto.setShortLineCycle(5);
         }
+        //校验入参：趋势
         if (Objects.nonNull(trendType) && "1".equals(trendType)) {
             dto.setTrendType(true);
         } else {
             dto.setTrendType(false);
+        }
+        //校验入参：ema
+        if (Objects.nonNull(emaValue)) {
+            dto.setEmaValue(emaValue);
+        } else {
+            dto.setEmaValue(120);
         }
     }
 

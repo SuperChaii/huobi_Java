@@ -36,6 +36,8 @@ public class CoreLogic {
         BigDecimal currObv = dto.getObvList().get(dto.getObvList().size() - 1);
         BigDecimal longHighObv = dto.getObvList().stream().max((x, y) -> x.compareTo(y)).get();
         BigDecimal longLowObv = dto.getObvList().stream().min((x, y) -> x.compareTo(y)).get();
+        //EMA
+        //Double currEma = dto.getEmaArr()[dto.getEmaArr().length - 1];
         //时间
         String currentTime = getTimeFormat(System.currentTimeMillis());
 
@@ -51,8 +53,8 @@ public class CoreLogic {
                     || dto.getCurrentLowPrice() <= dto.getLow30Price()
                     || dto.getLastLowPrice() <= dto.getLow30Price()
             )) {
-                //当价格突破highPrice 做多 / 突破lowPrice做空,且做多时DIF大于DEA线，做空时同理
-                if (currentPrice > upBoll && currDif > currDea) {
+                //         突破highPrice    /  DIF与DEA位置
+                if (currentPrice > upBoll  && currDif > currDea) {
                     //趋势行情
                     dto.setTrendType(true);
                     request.setOffset("open");

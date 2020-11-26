@@ -73,4 +73,7 @@ public class ContractParmaDto {
     private List<BigDecimal> obvList;
     //Boll
     private double[][] bollArr;
+    //EMA
+    private Integer EmaValue;
+    private double[] emaArr;
 }
