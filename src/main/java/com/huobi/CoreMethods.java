@@ -129,7 +129,6 @@ public class CoreMethods {
         List<ContractKline> contractAccountList;
         String currentTime = getTimeFormat(System.currentTimeMillis());
         DecimalFormat df = new DecimalFormat("#.00");
-        dto.setLastRealPrice(new BigDecimal(19306));
         while (true) {
             contractAccountList = contractService.getContractKline(ContractKlineRequest.builder()
                     .contractCode(contractCode)
