@@ -85,8 +85,8 @@ public class CoreLogic {
                     request.setOffset("open");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
-//                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
-//                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
+                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
+                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
                     System.out.println("***" + currentTime + "当前为【波段】行情，已【开空】仓" + request.getVolume() + "张！！");
                 } else if ((currentLowPrice < lowBoll || lastLowPrice < lowBoll)
                         && currentPrice > lowBoll
@@ -96,8 +96,8 @@ public class CoreLogic {
                     request.setOffset("open");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
-//                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
-//                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
+                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
+                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
                     System.out.println("***" + currentTime + "当前为【波段】行情，已【开多】仓" + request.getVolume() + "张！！");
                 }
             }
@@ -136,10 +136,17 @@ public class CoreLogic {
                 // 止盈：突破upboll后回落或突破upboll后跌破5日k低价，
                 // 止损：再次跌破upboll后
                 // 为多头设平仓逻辑：止盈：突破boll回落 && 止损：跌破boll
+                if (Objects.isNull(dto.getUpStopLossPoint())) {
+                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
+                }
+                if (Objects.isNull(dto.getLowStopLossPoint())) {
+                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
+                }
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentHighPrice >= upBoll
                         || lastHighPrice >= upBoll
                         || currentPrice <= lowBoll
+                        || currentPrice <= dto.getLowStopLossPoint()
                 )) {
                     if ((currentPrice <= upBoll || currentPrice <= dto.getLow5Price())
                             && currMacd < lastMacd) {
@@ -159,6 +166,7 @@ public class CoreLogic {
                         && (currentLowPrice <= lowBoll
                         || lastLowPrice <= lowBoll
                         || currentPrice >= upBoll
+                        || currentPrice >= dto.getUpStopLossPoint()
                 )) {
                     if ((currentPrice >= lowBoll || currentPrice >= dto.getHigh5Price())
                             && currMacd > lastMacd) {
