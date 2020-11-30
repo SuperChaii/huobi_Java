@@ -43,7 +43,7 @@ public class CoreLogic {
 
         //默认为吃单开仓（对手价20）
         request.setOrderPriceType("optimal_20");
-        //***开仓逻辑)***
+        //***开仓逻辑***
         if (!dto.getHaveOrder()) {
             //趋势行情-量价突破 > 判断当前价格是否连续突破长周期（自定义）日前高或前低，且OBV量能同时突破 则转换为趋势行情，否则为波段
             if ((currObv.compareTo(longHighObv) >= 0
@@ -80,24 +80,24 @@ public class CoreLogic {
                 if ((currentHighPrice > upBoll || lastHighPrice > upBoll)
                         && currentPrice < upBoll
                         && currentPrice > midBoll
+                        && currentPrice < lastLowPrice
                         && currMacd < lastMacd
                 ) {
                     request.setOffset("open");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
-                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
-                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
+                    dto.setUpStopLossPoint(upBoll);
                     System.out.println("***" + currentTime + "当前为【波段】行情，已【开空】仓" + request.getVolume() + "张！！");
                 } else if ((currentLowPrice < lowBoll || lastLowPrice < lowBoll)
                         && currentPrice > lowBoll
                         && currentPrice < midBoll
+                        && currentPrice > lastHighPrice
                         && currMacd > lastMacd
                 ) {
                     request.setOffset("open");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
-                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
-                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
+                    dto.setLowStopLossPoint(lowBoll);
                     System.out.println("***" + currentTime + "当前为【波段】行情，已【开多】仓" + request.getVolume() + "张！！");
                 }
             }
@@ -137,10 +137,10 @@ public class CoreLogic {
                 // 止损：再次跌破upboll后
                 // 为多头设平仓逻辑：止盈：突破boll回落 && 止损：跌破boll
                 if (Objects.isNull(dto.getUpStopLossPoint())) {
-                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
+                    dto.setUpStopLossPoint(upBoll);
                 }
                 if (Objects.isNull(dto.getLowStopLossPoint())) {
-                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
+                    dto.setLowStopLossPoint(lowBoll);
                 }
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentHighPrice >= upBoll
