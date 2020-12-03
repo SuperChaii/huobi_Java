@@ -72,9 +72,10 @@ public class CoreLogic {
                 //波段行情-开空仓
                 dto.setTrendType(false);
                 //当highPrice突破后会回落 做空 / 当lowPrice跌破反弹时 做多
-                if ((currentHighPrice > upBoll)
+                if (currentHighPrice >= upBoll
                         && currentPrice < upBoll
                         && currentPrice > midBoll
+                        && currentHighPrice != dto.getHigh30Price()
                 ) {
                     request.setOffset("open");
                     request.setDirection("sell");
@@ -82,9 +83,10 @@ public class CoreLogic {
                     dto.setUpStopLossPoint(upBoll + (upBoll - midBoll));
                     System.out.println("***" + currentTime + "当前为【波段】行情，已【开空】仓" + request.getVolume() + "张！！");
                     //波段行情-开多仓
-                } else if ((currentLowPrice < lowBoll)
+                } else if (currentLowPrice <= lowBoll
                         && currentPrice > lowBoll
                         && currentPrice < midBoll
+                        && currentLowPrice != dto.getLow30Price()
                 ) {
                     request.setOffset("open");
                     request.setDirection("buy");
@@ -135,9 +137,9 @@ public class CoreLogic {
                 // 止损：再次跌破upboll后
                 // 平仓逻辑：止盈：突破boll回落 && 止损：跌破boll
                 if ("buy".equals(dto.getHavaOrderDirection())
-                        && ((currentHighPrice > upBoll && currentPrice < upBoll)
-                        || currentPrice < dto.getLowStopLossPoint()
-                        || currentPrice < dto.getLow30Price()
+                        && ((currentHighPrice >= upBoll && currentPrice <= upBoll)
+                        || currentPrice <= dto.getLowStopLossPoint()
+                        || currentLowPrice <= dto.getLow30Price()
                 )) {
                     request.setOffset("close");
                     request.setDirection("sell");
@@ -145,9 +147,9 @@ public class CoreLogic {
                     System.out.println("***" + currentTime + "当前为【波段】，已【平多】仓" + request.getVolume() + "张！！");
                     //为空头设平仓逻辑：
                 } else if ("sell".equals(dto.getHavaOrderDirection())
-                        && ((currentLowPrice < lowBoll && currentPrice > lowBoll)
-                        || currentPrice > dto.getUpStopLossPoint()
-                        || currentPrice > dto.getHigh30Price()
+                        && ((currentLowPrice <= lowBoll && currentPrice >= lowBoll)
+                        || currentPrice >= dto.getUpStopLossPoint()
+                        || currentHighPrice >= dto.getHigh30Price()
                 )) {
                     request.setOffset("close");
                     request.setDirection("buy");
