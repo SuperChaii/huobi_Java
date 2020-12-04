@@ -137,9 +137,9 @@ public class CoreLogic {
                 // 止损：再次跌破upboll后
                 // 平仓逻辑：止盈：突破boll回落 && 止损：跌破boll
                 if ("buy".equals(dto.getHavaOrderDirection())
-                        && ((currentHighPrice >= upBoll && currentPrice <= upBoll)
+                        && (currentHighPrice >= upBoll && currentPrice <= upBoll
                         || currentPrice <= dto.getLowStopLossPoint()
-                        || currentLowPrice <= dto.getLow30Price()
+                        || (currentLowPrice <= dto.getLow30Price() && currObv.compareTo(longHighObv) <= 0)
                 )) {
                     request.setOffset("close");
                     request.setDirection("sell");
@@ -147,9 +147,9 @@ public class CoreLogic {
                     System.out.println("***" + currentTime + "当前为【波段】，已【平多】仓" + request.getVolume() + "张！！");
                     //为空头设平仓逻辑：
                 } else if ("sell".equals(dto.getHavaOrderDirection())
-                        && ((currentLowPrice <= lowBoll && currentPrice >= lowBoll)
+                        && (currentLowPrice <= lowBoll && currentPrice >= lowBoll
                         || currentPrice >= dto.getUpStopLossPoint()
-                        || currentHighPrice >= dto.getHigh30Price()
+                        || (currentHighPrice >= dto.getHigh30Price() && currObv.compareTo(longHighObv) >= 0)
                 )) {
                     request.setOffset("close");
                     request.setDirection("buy");
