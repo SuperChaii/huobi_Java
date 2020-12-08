@@ -75,7 +75,6 @@ public class CoreLogic {
                 if (currentHighPrice >= upBoll
                         && currentPrice < upBoll
                         && currentPrice > midBoll
-                        && currentHighPrice != dto.getHigh30Price()
                 ) {
                     request.setOffset("open");
                     request.setDirection("sell");
@@ -86,7 +85,6 @@ public class CoreLogic {
                 } else if (currentLowPrice <= lowBoll
                         && currentPrice > lowBoll
                         && currentPrice < midBoll
-                        && currentLowPrice != dto.getLow30Price()
                 ) {
                     request.setOffset("open");
                     request.setDirection("buy");
