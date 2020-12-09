@@ -79,7 +79,7 @@ public class CoreLogic {
                     request.setOffset("open");
                     request.setDirection("sell");
                     dto.setCurrentTakeOrder(true);
-                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll));
+                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
                     System.out.println("***" + currentTime + "当前为【波段】行情，已【开空】仓" + request.getVolume() + "张！！");
                     //波段行情-开多仓
                 } else if (currentLowPrice <= lowBoll
@@ -89,7 +89,7 @@ public class CoreLogic {
                     request.setOffset("open");
                     request.setDirection("buy");
                     dto.setCurrentTakeOrder(true);
-                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll));
+                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
                     System.out.println("***" + currentTime + "当前为【波段】行情，已【开多】仓" + request.getVolume() + "张！！");
                 }
             }
@@ -126,10 +126,10 @@ public class CoreLogic {
             } else {
                 //***波段行情平仓***
                 if (Objects.isNull(dto.getUpStopLossPoint())) {
-                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll));
+                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
                 }
                 if (Objects.isNull(dto.getLowStopLossPoint())) {
-                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll));
+                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
                 }
                 // 止盈：突破upboll后回落
                 // 止损：再次跌破upboll后
@@ -137,7 +137,7 @@ public class CoreLogic {
                 if ("buy".equals(dto.getHavaOrderDirection())
                         && (currentHighPrice >= upBoll && currentPrice <= upBoll
                         || currentPrice <= dto.getLowStopLossPoint()
-                        || (currentLowPrice <= dto.getLow30Price() && currObv.compareTo(longHighObv) <= 0)
+                        || (currentPrice <= dto.getLow30Price() && currObv.compareTo(longLowObv) <= 0)
                 )) {
                     request.setOffset("close");
                     request.setDirection("sell");
@@ -147,7 +147,7 @@ public class CoreLogic {
                 } else if ("sell".equals(dto.getHavaOrderDirection())
                         && (currentLowPrice <= lowBoll && currentPrice >= lowBoll
                         || currentPrice >= dto.getUpStopLossPoint()
-                        || (currentHighPrice >= dto.getHigh30Price() && currObv.compareTo(longHighObv) >= 0)
+                        || (currentPrice >= dto.getHigh30Price() && currObv.compareTo(longHighObv) >= 0)
                 )) {
                     request.setOffset("close");
                     request.setDirection("buy");
