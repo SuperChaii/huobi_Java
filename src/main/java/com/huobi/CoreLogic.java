@@ -25,13 +25,15 @@ public class CoreLogic {
         Double currentPrice = dto.getCurrentClosePrice();
         //BOLL
         Double upBoll = dto.getBollArr()[0][dto.getBollArr()[0].length - 1];
+        Double lastUpBoll = dto.getBollArr()[0][dto.getBollArr()[0].length - 2];
         Double midBoll = dto.getBollArr()[1][dto.getBollArr()[1].length - 1];
         Double lowBoll = dto.getBollArr()[2][dto.getBollArr()[2].length - 1];
+        Double lastLowBoll = dto.getBollArr()[2][dto.getBollArr()[2].length - 2];
         //MACD
-        Double currMacd = dto.getMacdArr()[dto.getMacdArr().length - 1];
-        Double lastMacd = dto.getMacdArr()[dto.getMacdArr().length - 2];
-        Double currDif = dto.getDifArr()[dto.getDifArr().length - 1];
-        Double currDea = dto.getDeaArr()[dto.getDeaArr().length - 1];
+//        Double currMacd = dto.getMacdArr()[dto.getMacdArr().length - 1];
+//        Double lastMacd = dto.getMacdArr()[dto.getMacdArr().length - 2];
+//        Double currDif = dto.getDifArr()[dto.getDifArr().length - 1];
+//        Double currDea = dto.getDeaArr()[dto.getDeaArr().length - 1];
         //OBV
         BigDecimal currObv = dto.getObvList().get(dto.getObvList().size() - 1);
         BigDecimal longHighObv = dto.getObvList().stream().max((x, y) -> x.compareTo(y)).get();
@@ -69,28 +71,31 @@ public class CoreLogic {
                     System.out.println("***" + currentTime + "当前为【趋势】行情，【开空】仓" + request.getVolume() + "张！！");
                 }
             } else {
-                //波段行情-开空仓
-                dto.setTrendType(false);
-                //当highPrice突破后会回落 做空 / 当lowPrice跌破反弹时 做多
-                if (currentHighPrice >= upBoll
-                        && currentPrice < upBoll
-                        && currentPrice > midBoll
-                ) {
-                    request.setOffset("open");
-                    request.setDirection("sell");
-                    dto.setCurrentTakeOrder(true);
-                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
-                    System.out.println("***" + currentTime + "当前为【波段】行情，已【开空】仓" + request.getVolume() + "张！！");
-                    //波段行情-开多仓
-                } else if (currentLowPrice <= lowBoll
-                        && currentPrice > lowBoll
-                        && currentPrice < midBoll
-                ) {
-                    request.setOffset("open");
-                    request.setDirection("buy");
-                    dto.setCurrentTakeOrder(true);
-                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
-                    System.out.println("***" + currentTime + "当前为【波段】行情，已【开多】仓" + request.getVolume() + "张！！");
+                //判断boll为收口状态
+                if (lastUpBoll > upBoll && lastLowBoll < lowBoll) {
+                    //波段行情-开空仓
+                    dto.setTrendType(false);
+                    //当highPrice突破后会回落 做空 / 当lowPrice跌破反弹时 做多
+                    if (currentHighPrice >= upBoll
+                            && currentPrice < upBoll
+                            && currentPrice > midBoll
+                    ) {
+                        request.setOffset("open");
+                        request.setDirection("sell");
+                        dto.setCurrentTakeOrder(true);
+                        dto.setUpStopLossPoint(upBoll * 2 - midBoll);
+                        System.out.println("***" + currentTime + "当前为【波段】行情，已【开空】仓" + request.getVolume() + "张！！");
+                        //波段行情-开多仓
+                    } else if (currentLowPrice <= lowBoll
+                            && currentPrice > lowBoll
+                            && currentPrice < midBoll
+                    ) {
+                        request.setOffset("open");
+                        request.setDirection("buy");
+                        dto.setCurrentTakeOrder(true);
+                        dto.setLowStopLossPoint(lowBoll * 2 - lowBoll);
+                        System.out.println("***" + currentTime + "当前为【波段】行情，已【开多】仓" + request.getVolume() + "张！！");
+                    }
                 }
             }
         } else {
@@ -126,10 +131,10 @@ public class CoreLogic {
             } else {
                 //***波段行情平仓***
                 if (Objects.isNull(dto.getUpStopLossPoint())) {
-                    dto.setUpStopLossPoint(upBoll + (upBoll - midBoll) / 2);
+                    dto.setUpStopLossPoint(upBoll * 2 - midBoll);
                 }
                 if (Objects.isNull(dto.getLowStopLossPoint())) {
-                    dto.setLowStopLossPoint(lowBoll - (midBoll - lowBoll) / 2);
+                    dto.setLowStopLossPoint(lowBoll * 2 - midBoll);
                 }
                 // 止盈：突破upboll后回落
                 // 止损：再次跌破upboll后
